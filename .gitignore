@@ -1,0 +1,16 @@
+# dependencies / build output
+node_modules/
+frontend/dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+# logs and scratch
+*.log
+frontend/dev.log
+# downloaded history (re-created by `python -m app.train`) and stale forecast caches
+backend/cache/hist_*.pkl
+backend/cache/forecast_*.json
+# superseded model backups
+backend/models/*_v1.*
+# secrets
+.env

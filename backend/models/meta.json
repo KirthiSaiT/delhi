@@ -1,0 +1,121 @@
+{
+ "trained_on": "2023-01-01 00:00:00 to 2026-09-28 23:00:00",
+ "n_rows": 2616960,
+ "k_aod": 0.006211315167917797,
+ "holdout": "2025-10-25 to 2025-11-25 (Oct-Nov 2025 stubble season, excluded from training)",
+ "metrics": {
+  "pm25": {
+   "0-24h": {
+    "mae": 18.18,
+    "persistence_mae": 29.68,
+    "improvement_pct": 38.8,
+    "r2": 0.695
+   },
+   "25-48h": {
+    "mae": 22.0,
+    "persistence_mae": 35.13,
+    "improvement_pct": 37.4,
+    "r2": 0.626
+   },
+   "49-72h": {
+    "mae": 23.47,
+    "persistence_mae": 38.55,
+    "improvement_pct": 39.1,
+    "r2": 0.609
+   }
+  },
+  "pm10": {
+   "0-24h": {
+    "mae": 37.05,
+    "persistence_mae": 50.24,
+    "improvement_pct": 26.2,
+    "r2": 0.368
+   },
+   "25-48h": {
+    "mae": 42.76,
+    "persistence_mae": 65.48,
+    "improvement_pct": 34.7,
+    "r2": 0.213
+   },
+   "49-72h": {
+    "mae": 43.77,
+    "persistence_mae": 69.78,
+    "improvement_pct": 37.3,
+    "r2": 0.199
+   }
+  },
+  "o3": {
+   "0-24h": {
+    "mae": 15.48,
+    "persistence_mae": 61.8,
+    "improvement_pct": 75.0,
+    "r2": 0.881
+   },
+   "25-48h": {
+    "mae": 16.5,
+    "persistence_mae": 64.4,
+    "improvement_pct": 74.4,
+    "r2": 0.868
+   },
+   "49-72h": {
+    "mae": 17.09,
+    "persistence_mae": 65.4,
+    "improvement_pct": 73.9,
+    "r2": 0.862
+   }
+  },
+  "no2": {
+   "0-24h": {
+    "mae": 10.14,
+    "persistence_mae": 28.03,
+    "improvement_pct": 63.8,
+    "r2": 0.79
+   },
+   "25-48h": {
+    "mae": 11.04,
+    "persistence_mae": 31.45,
+    "improvement_pct": 64.9,
+    "r2": 0.757
+   },
+   "49-72h": {
+    "mae": 10.93,
+    "persistence_mae": 32.58,
+    "improvement_pct": 66.5,
+    "r2": 0.757
+   }
+  }
+ },
+ "features": [
+  "h",
+  "pm2_5_0",
+  "pm10_0",
+  "ozone_0",
+  "nitrogen_dioxide_0",
+  "aerosol_optical_depth_0",
+  "pm25_24m_0",
+  "up_pm25_0",
+  "reg_pm25_0",
+  "boundary_layer_height_0",
+  "temperature_2m",
+  "relative_humidity_2m",
+  "boundary_layer_height",
+  "wind_speed_10m",
+  "wd_s",
+  "wd_c",
+  "shortwave_radiation",
+  "temperature_925hPa",
+  "inv",
+  "vent",
+  "precipitation",
+  "precip6",
+  "wind_speed_925hPa",
+  "hr_s",
+  "hr_c",
+  "doy_s",
+  "doy_c",
+  "lat",
+  "lon"
+ ],
+ "caveat": "Ground truth = CAMS analysis via Open-Meteo (no CPCB station key); meteorology at target time comes from archived short-lead NWP, so long-lead skill is slightly optimistic.",
+ "built": "2026-09-30 14:08:42.784884"
+}

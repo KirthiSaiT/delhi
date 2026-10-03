@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Slider } from "@/components/ui/slider"
 import { TONE, aqiCat, fmtTime } from "@/lib/aqi"
+import { useT } from "@/lib/i18n"
 import type { Forecast, WhatIfParams } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -16,18 +17,19 @@ const hr = (t: string) => {
 
 /* ---------------------------------------------------------------- attribution */
 export function AttributionCard({ d }: { d: Forecast }) {
+  const { t } = useT()
   const a = d.attribution
   const config: ChartConfig = {
-    background: { label: "Background (regional + local)", color: "#9b9a97" },
-    stubble: { label: "Stubble plume", color: "#d9730d" },
-    feedback: { label: "Feedback amplification", color: "#e03e3e" },
+    background: { label: t("Background (regional + local)"), color: "#9b9a97" },
+    stubble: { label: t("Stubble plume"), color: "#d9730d" },
+    feedback: { label: t("Feedback amplification"), color: "#e03e3e" },
   }
-  const data = d.times.map((t, i) => ({ label: hr(t), background: a.background[i], stubble: a.stubble[i], feedback: a.feedback[i] }))
+  const data = d.times.map((tm, i) => ({ label: hr(tm), background: a.background[i], stubble: a.stubble[i], feedback: a.feedback[i] }))
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><Split className="size-4 text-primary" />Why is PM2.5 high?</CardTitle>
-        <CardDescription>Delhi-mean PM2.5 split into its causes, adding up exactly to the coupled forecast.</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><Split className="size-4 text-primary" />{t("Why is PM2.5 high?")}</CardTitle>
+        <CardDescription>{t("Delhi-mean PM2.5 split into its causes, adding up exactly to the coupled forecast.")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <ChartContainer config={config} className="h-[150px] w-full">
@@ -43,10 +45,10 @@ export function AttributionCard({ d }: { d: Forecast }) {
           </AreaChart>
         </ChartContainer>
         <div className="flex flex-wrap gap-1.5 text-xs">
-          <Badge className={cn("h-6 px-2.5", TONE.gray)}>Background {a.share.background}%</Badge>
-          <Badge className={cn("h-6 px-2.5", TONE.orange)}>Stubble {a.share.stubble}%</Badge>
-          <Badge className={cn("h-6 px-2.5", TONE.red)}>Feedback {a.share.feedback}%</Badge>
-          <span className="self-center text-muted-foreground">share of 72 h PM2.5</span>
+          <Badge className={cn("h-6 px-2.5", TONE.gray)}>{t("Background")} {a.share.background}%</Badge>
+          <Badge className={cn("h-6 px-2.5", TONE.orange)}>{t("Stubble")} {a.share.stubble}%</Badge>
+          <Badge className={cn("h-6 px-2.5", TONE.red)}>{t("Feedback")} {a.share.feedback}%</Badge>
+          <span className="self-center text-muted-foreground">{t("share of 72 h PM2.5")}</span>
         </div>
       </CardContent>
     </Card>
@@ -68,6 +70,7 @@ const ADVICE: Record<string, { summary: string; do: string[] }> = {
 }
 
 export function AdvisoryCard({ d, hour }: { d: Forecast; hour: number }) {
+  const { t } = useT()
   const aqi = d.delhi.aqi
   const cat = aqiCat(aqi[hour])
   const adv = ADVICE[cat.name]
@@ -78,16 +81,16 @@ export function AdvisoryCard({ d, hour }: { d: Forecast; hour: number }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><HeartPulse className="size-4 text-primary" />Health advisory</CardTitle>
-        <CardDescription>CPCB guidance for {fmtTime(d.times[hour], { weekday: "short", hour: "2-digit", hour12: false })} · <b>{cat.name}</b></CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><HeartPulse className="size-4 text-primary" />{t("Health advisory")}</CardTitle>
+        <CardDescription>{t("CPCB guidance for")} {fmtTime(d.times[hour], { weekday: "short", hour: "2-digit", hour12: false })} · <b>{t(cat.name)}</b></CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm">{adv.summary}</p>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-foreground/80">{adv.do.map((t) => <li key={t}>{t}</li>)}</ul>
+        <p className="text-sm">{t(adv.summary)}</p>
+        <ul className="list-disc space-y-1 pl-5 text-sm text-foreground/80">{adv.do.map((x) => <li key={x}>{t(x)}</li>)}</ul>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">Best next 24 h</div><div className="text-sm font-semibold">+{best} h</div><div className="text-[11px] text-muted-foreground">AQI {Math.round(aqi[best])}</div></div>
-          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">Worst in 72 h</div><div className="text-sm font-semibold">+{worst} h</div><div className="text-[11px] text-muted-foreground">AQI {Math.round(aqi[worst])}</div></div>
-          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">Hours &gt; 300</div><div className="text-sm font-semibold">{badHours} h</div><div className="text-[11px] text-muted-foreground">Very Poor+</div></div>
+          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">{t("Best next 24 h")}</div><div className="text-sm font-semibold">+{best} h</div><div className="text-[11px] text-muted-foreground">AQI {Math.round(aqi[best])}</div></div>
+          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">{t("Worst in 72 h")}</div><div className="text-sm font-semibold">+{worst} h</div><div className="text-[11px] text-muted-foreground">AQI {Math.round(aqi[worst])}</div></div>
+          <div className="rounded-lg bg-muted px-2 py-2"><div className="text-[11px] text-muted-foreground">{t("Hours > 300")}</div><div className="text-sm font-semibold">{badHours} h</div><div className="text-[11px] text-muted-foreground">{t("Very Poor+")}</div></div>
         </div>
       </CardContent>
     </Card>
@@ -95,34 +98,35 @@ export function AdvisoryCard({ d, hour }: { d: Forecast; hour: number }) {
 }
 
 /* ---------------------------------------------------------------- what-if controls */
-const SLIDERS: { key: keyof WhatIfParams; label: string; min: number; max: number; step: number; fmt: (v: number) => string }[] = [
-  { key: "fire_scale", label: "Stubble fire load", min: 0.1, max: 2.5, step: 0.1, fmt: (v) => `×${v.toFixed(1)} (${Math.round(650 * v)} fires)` },
-  { key: "wind_scale", label: "Wind speed", min: 0.2, max: 1.2, step: 0.05, fmt: (v) => `×${v.toFixed(2)} forecast` },
-  { key: "pbl_scale", label: "Mixing depth (PBL)", min: 0.15, max: 1, step: 0.05, fmt: (v) => `${Math.round(v * 100)}% of forecast` },
+const SLIDERS: { key: keyof WhatIfParams; label: string; min: number; max: number; step: number; fmt: (v: number, t: (s: string) => string) => string }[] = [
+  { key: "fire_scale", label: "Stubble fire load", min: 0.1, max: 2.5, step: 0.1, fmt: (v, t) => `×${v.toFixed(1)} (${Math.round(650 * v)} ${t("fires")})` },
+  { key: "wind_scale", label: "Wind speed", min: 0.2, max: 1.2, step: 0.05, fmt: (v, t) => `×${v.toFixed(2)} ${t("forecast")}` },
+  { key: "pbl_scale", label: "Mixing depth (PBL)", min: 0.15, max: 1, step: 0.05, fmt: (v, t) => `${Math.round(v * 100)}% ${t("of forecast")}` },
   { key: "start_pm25", label: "Starting haze (PM2.5)", min: 50, max: 350, step: 10, fmt: (v) => `${Math.round(v)} µg/m³` },
 ]
 
 export function WhatIfCard({ params, setParams, run, reset, running }: {
   params: WhatIfParams; setParams: (p: WhatIfParams) => void; run: () => void; reset: () => void; running: boolean
 }) {
+  const { t } = useT()
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><SlidersHorizontal className="size-4 text-primary" />Scenario controls</CardTitle>
-        <CardDescription>Change the conditions and re-run the whole coupled system.</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><SlidersHorizontal className="size-4 text-primary" />{t("Scenario controls")}</CardTitle>
+        <CardDescription>{t("Change the conditions and re-run the whole coupled system.")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {SLIDERS.map((s) => (
           <div key={s.key} className="space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium">{s.label}</span><span className="tabular-nums text-muted-foreground">{s.fmt(params[s.key])}</span>
+              <span className="font-medium">{t(s.label)}</span><span className="tabular-nums text-muted-foreground">{s.fmt(params[s.key], t)}</span>
             </div>
             <Slider value={[params[s.key]]} min={s.min} max={s.max} step={s.step}
               onValueChange={(v) => setParams({ ...params, [s.key]: Array.isArray(v) ? v[0] : v })} />
           </div>
         ))}
         <div className="flex gap-2">
-          <Button className="flex-1" disabled={running} onClick={run}>{running ? <Loader2 className="animate-spin" /> : null}{running ? "Running…" : "Run scenario"}</Button>
+          <Button className="flex-1" disabled={running} onClick={run}>{running ? <Loader2 className="animate-spin" /> : null}{running ? t("Running…") : t("Run scenario")}</Button>
           <Button variant="outline" size="icon" aria-label="Reset" disabled={running} onClick={reset}><RotateCcw /></Button>
         </div>
       </CardContent>

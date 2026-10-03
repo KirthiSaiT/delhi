@@ -1,0 +1,1 @@
+{"band": "10th-90th percentile of PM2.5", "target_coverage": 80, "holdout_coverage": {"overall": 76.2, "mean_width": 52.5, "0-24h": 80.7, "25-48h": 75.6, "49-72h": 72.3}, "note": "Coverage measured on the Oct-Nov 2025 hold-out with models that never saw it."}

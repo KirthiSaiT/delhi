@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from .config import *
-from . import model, physics, train
+from . import insights, model, physics, train
 from .forecast import _trail, N_DELHI
 
 ORIGINS = ["2025-10-28 06:00", "2025-11-01 06:00", "2025-11-05 06:00", "2025-11-09 06:00", "2025-11-13 06:00"]
@@ -50,6 +50,8 @@ def main():
     meta = json.loads((MODELS / "meta.json").read_text())
     out = dict(built=str(pd.Timestamp.now()), note="Model trained WITHOUT Oct 22 - Nov 28 2025. Meteorology at forecast time is the archived NWP; "
                                                    "no fire/plume input is used in the replay.", origins=[])
+    qpath = MODELS / "models_q_holdout.joblib"
+    qh = joblib.load(qpath) if qpath.exists() else None
     tix = pd.DatetimeIndex(times)
     errs = {"model": [], "persistence": [], "uncoupled": []}
     for o in ORIGINS:
@@ -68,6 +70,13 @@ def main():
         aqi_a = _delhi_aqi(pre, act["pm2_5"], act["pm10"], act["nitrogen_dioxide"], act["ozone"])
         aqi_f = _delhi_aqi(pre, fpm25, np.maximum(fpm10, fpm25 * 1.15), fno2, fo3)
         a, f, u, p = d(act["pm2_5"]), d(fpm25), d(upm25), d(pers)
+        band = None
+        if qh:
+            X, _ = model.assemble(model.derive(A), times, [t0], np.arange(1, HORIZON + 1))
+            lo_fc, hi_fc = insights.bands(qh, X, unc["pm25"], cur["pm25"], len(STATIONS), HORIZON)
+            lo_s = np.concatenate([A["pm2_5"][:, t0][:, None], lo_fc], axis=1)
+            hi_s = np.concatenate([A["pm2_5"][:, t0][:, None], hi_fc], axis=1)
+            band = (d(lo_s), d(hi_s))
         mae = lambda x: float(np.abs(x[1:] - a[1:]).mean())
         errs["model"].append(mae(f)); errs["persistence"].append(mae(p)); errs["uncoupled"].append(mae(u))
         cat = lambda v: [physics.category(x)[0] for x in v]
@@ -75,10 +84,13 @@ def main():
         out["origins"].append(dict(
             origin=o, times=[str(t)[:16] for t in tix[sl]],
             actual=np.round(a, 1).tolist(), forecast=np.round(f, 1).tolist(), uncoupled=np.round(u, 1).tolist(),
-            persistence=np.round(p, 1).tolist(), aqi_actual=np.round(aqi_a).tolist(), aqi_forecast=np.round(aqi_f).tolist(),
+            persistence=np.round(p, 1).tolist(),
+            lo=np.round(band[0], 1).tolist() if band else None, hi=np.round(band[1], 1).tolist() if band else None,
+            aqi_actual=np.round(aqi_a).tolist(), aqi_forecast=np.round(aqi_f).tolist(),
             stats=dict(mae=round(mae(f), 1), mae_uncoupled=round(mae(u), 1), mae_persistence=round(mae(p), 1),
                        bias=round(float((f[1:] - a[1:]).mean()), 1), peak_actual=round(float(a.max()), 1),
-                       peak_forecast=round(float(f.max()), 1), category_hit_pct=round(100 * hit)),
+                       peak_forecast=round(float(f.max()), 1), category_hit_pct=round(100 * hit),
+                       band_coverage_pct=round(100 * float(((a[1:] >= band[0][1:]) & (a[1:] <= band[1][1:])).mean())) if band else None),
         ))
         print(o, out["origins"][-1]["stats"], flush=True)
     out["summary"] = dict(mae_model=round(float(np.mean(errs["model"])), 1), mae_persistence=round(float(np.mean(errs["persistence"])), 1),

@@ -1,4 +1,4 @@
-import { Globe, Home, MapPin, Pause, Play, RefreshCw, WifiOff } from "lucide-react"
+import { Download, Globe, Home, MapPin, Pause, Play, RefreshCw, WifiOff } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -7,12 +7,15 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import MapView, { type Basemap, type Layers, type Region } from "@/components/MapView"
+import BriefingCard from "@/components/Briefing"
 import { AdvisoryCard, AttributionCard, WhatIfCard } from "@/components/Extras"
+import { DriversCard, GrapCard, OzoneCard, SourceCard } from "@/components/Modules"
 import { AqiCard, FeedbackCard, ForecastChart, InversionCard, PlumeCard } from "@/components/Panels"
 import { CATS, TONE, aqiColor, fmtTime } from "@/lib/aqi"
+import { useT } from "@/lib/i18n"
 import type { Forecast, WhatIfParams } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +32,7 @@ export interface WindowProps {
 }
 
 function Sidebar({ d, hour, selected, pick }: { d: Forecast; hour: number; selected: string | null; pick: (n: string | null) => void }) {
+  const { t } = useT()
   const Row = ({ name, aqi, active, onClick }: { name: string; aqi: number; active: boolean; onClick: () => void }) => (
     <Button variant="ghost" onClick={onClick} className={cn("h-8 w-full justify-start gap-2 px-2 font-normal", active && "bg-secondary font-medium")}>
       <span className="size-2 shrink-0 rounded-full" style={{ background: aqiColor(aqi) }} />
@@ -38,7 +42,7 @@ function Sidebar({ d, hour, selected, pick }: { d: Forecast; hour: number; selec
   )
   const group = (title: string, list: typeof d.stations) => (
     <div className="space-y-0.5">
-      <div className="px-2 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
+      <div className="px-2 pb-1 pt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t(title)}</div>
       {list.map((s) => <Row key={s.name} name={s.name} aqi={s.aqi[hour]} active={selected === s.name} onClick={() => pick(s.name)} />)}
     </div>
   )
@@ -46,7 +50,7 @@ function Sidebar({ d, hour, selected, pick }: { d: Forecast; hour: number; selec
     <aside className="hidden w-[210px] shrink-0 flex-col border-r bg-sidebar xl:flex">
       <div className="space-y-0.5 p-2 pt-3">
         <Button variant="ghost" onClick={() => pick(null)} className={cn("h-8 w-full justify-start gap-2 px-2", selected === null && "bg-secondary font-medium")}>
-          <Home className="size-4 text-muted-foreground" />Delhi NCR
+          <Home className="size-4 text-muted-foreground" />{t("Delhi NCR")}
           <span className="ml-auto text-xs tabular-nums text-muted-foreground">{Math.round(d.delhi.aqi[hour])}</span>
         </Button>
       </div>
@@ -60,6 +64,7 @@ function Sidebar({ d, hour, selected, pick }: { d: Forecast; hour: number; selec
 }
 
 export default function AppWindow(p: WindowProps) {
+  const { t } = useT()
   const { data, hour } = p
   return (
     <div className="window-shadow overflow-hidden rounded-2xl border bg-background">
@@ -67,32 +72,35 @@ export default function AppWindow(p: WindowProps) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-muted/70 px-3 py-2">
         <div className="hidden gap-1.5 sm:flex"><span className="size-3 rounded-full bg-[#d8d6d2]" /><span className="size-3 rounded-full bg-[#d8d6d2]" /><span className="size-3 rounded-full bg-[#d8d6d2]" /></div>
         <div className="flex items-center gap-1.5 rounded-md bg-background px-2.5 py-1 text-xs font-medium shadow-sm">
-          <Globe className="size-3.5 text-muted-foreground" />Delhi NCR HQ
+          <Globe className="size-3.5 text-muted-foreground" />{t("Delhi NCR HQ")}
         </div>
         <Tabs value={p.scenario} onValueChange={(v) => p.setScenario(v as "live" | "peak")}>
           <TabsList className="h-8">
-            <TabsTrigger value="live">Live</TabsTrigger>
-            <TabsTrigger value="peak">Stubble-season what-if</TabsTrigger>
+            <TabsTrigger value="live">{t("Live")}</TabsTrigger>
+            <TabsTrigger value="peak">{t("Stubble-season what-if")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="ml-auto flex items-center gap-2">
           {data && (
             <Badge className={cn("hidden h-6 px-2.5 sm:inline-flex", data.scenario === "peak" ? TONE.orange : TONE.green)}>
-              {data.scenario === "peak" ? "Scenario · synthetic fires" : "Live data"}
+              {data.scenario === "peak" ? t("Scenario · synthetic fires") : t("Live data")}
             </Badge>
           )}
-          {data?.offline && <Badge className={cn("h-6 px-2.5", TONE.yellow)}><WifiOff />offline cache</Badge>}
+          {data?.offline && <Badge className={cn("h-6 px-2.5", TONE.yellow)}><WifiOff />{t("offline cache")}</Badge>}
+          <Button variant="outline" size="sm" nativeButton={false} render={<a href={`/api/export.csv?scenario=${p.scenario}`} download />}>
+            <Download />{t("CSV")}
+          </Button>
           <Button variant="outline" size="sm" disabled={p.loading} onClick={p.refresh}>
-            <RefreshCw className={cn(p.loading && "animate-spin")} />Refresh
+            <RefreshCw className={cn(p.loading && "animate-spin")} />{t("Refresh")}
           </Button>
         </div>
       </div>
 
-      {p.err && <div className="border-b bg-destructive/10 px-4 py-2 text-sm text-destructive">Could not load forecast: {p.err}. Is the backend running on :8000?</div>}
+      {p.err && <div className="border-b bg-destructive/10 px-4 py-2 text-sm text-destructive">{t("Could not load forecast")}: {p.err}. {t("Is the backend running on :8000?")}</div>}
       {data && (
         <div className="border-b bg-background px-4 py-1.5 text-[11px] text-muted-foreground">
-          {data.scenario_label}
-          <span className="float-right">Updated {fmtTime(data.generated, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} IST</span>
+          {t(data.scenario_label)}
+          <span className="float-right">{t("Updated")} {fmtTime(data.generated, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} IST</span>
         </div>
       )}
 
@@ -110,19 +118,20 @@ export default function AppWindow(p: WindowProps) {
                     <div className="pointer-events-auto flex flex-wrap gap-2">
                       <ToggleGroup variant="outline" size="sm" spacing={0} value={[p.region]} className="bg-background shadow-sm"
                         onValueChange={(v) => v[0] && p.setRegion(v[0] as Region)}>
-                        <ToggleGroupItem value="ncr" className={SEL}>Delhi NCR</ToggleGroupItem>
-                        <ToggleGroupItem value="belt" className={SEL}>Stubble belt</ToggleGroupItem>
+                        <ToggleGroupItem value="ncr" className={SEL}>{t("Delhi NCR")}</ToggleGroupItem>
+                        <ToggleGroupItem value="belt" className={SEL}>{t("Stubble belt")}</ToggleGroupItem>
                       </ToggleGroup>
                       <ToggleGroup variant="outline" size="sm" spacing={0} value={[p.basemap]} className="bg-background shadow-sm"
                         onValueChange={(v) => v[0] && p.setBasemap(v[0] as Basemap)}>
-                        <ToggleGroupItem value="light" className={SEL}>Light</ToggleGroupItem>
+                        <ToggleGroupItem value="light" className={SEL}>{t("Light")}</ToggleGroupItem>
                         <ToggleGroupItem value="osm" className={SEL}>OpenStreetMap</ToggleGroupItem>
                       </ToggleGroup>
                     </div>
-                    <Card className="pointer-events-auto flex-row items-center gap-3 rounded-lg px-2.5 py-1.5 text-xs shadow-sm">
-                      {(["grid", "fires", "plume"] as const).map((k) => (
-                        <label key={k} className="flex cursor-pointer items-center gap-1.5 capitalize">
-                          <Switch size="sm" checked={p.layers[k]} onCheckedChange={(v) => p.setLayers((l) => ({ ...l, [k]: v }))} />{k === "grid" ? "AQI" : k}
+                    <Card className="pointer-events-auto flex-row flex-wrap items-center gap-3 rounded-lg px-2.5 py-1.5 text-xs shadow-sm">
+                      {(["grid", "fires", "plume", "source"] as const).map((k) => (
+                        <label key={k} className="flex cursor-pointer items-center gap-1.5">
+                          <Switch size="sm" checked={p.layers[k]} onCheckedChange={(v) => p.setLayers((l) => ({ ...l, [k]: v }))} />
+                          {t(k === "grid" ? "AQI" : k === "fires" ? "Fires" : k === "plume" ? "Plume" : "Source")}
                         </label>
                       ))}
                     </Card>
@@ -132,7 +141,7 @@ export default function AppWindow(p: WindowProps) {
                       {CATS.map((c) => (
                         <div key={c.name} className="flex flex-col items-center gap-0.5">
                           <span className="h-2 w-9 rounded-sm" style={{ background: c.color }} />
-                          <span className="text-[9px] text-muted-foreground">{c.name}</span>
+                          <span className="text-[9px] text-muted-foreground">{t(c.name)}</span>
                         </div>
                       ))}
                     </div>
@@ -144,7 +153,7 @@ export default function AppWindow(p: WindowProps) {
                     <Button size="icon" onClick={() => p.setPlaying((x) => !x)} aria-label="play">{p.playing ? <Pause /> : <Play />}</Button>
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold">{fmtTime(data.times[hour])} IST</div>
-                      <div className="text-xs text-muted-foreground">{hour === 0 ? "Now (analysis)" : `+${hour} h forecast`}</div>
+                      <div className="text-xs text-muted-foreground">{hour === 0 ? t("Now (analysis)") : `+${hour} h ${t("forecast")}`}</div>
                     </div>
                     {p.selected && (
                       <Button variant="secondary" size="sm" className={cn("ml-auto", TONE.blue)} onClick={() => p.pick(null)}>
@@ -159,14 +168,36 @@ export default function AppWindow(p: WindowProps) {
                 </Card>
                 <ForecastChart d={data} hour={hour} name={p.selected} />
               </div>
+
               <div className="space-y-4">
                 {p.scenario === "peak" && <WhatIfCard params={p.params} setParams={p.setParams} run={p.runParams} reset={p.resetParams} running={p.running} />}
-                <AqiCard d={data} hour={hour} name={p.selected} onPick={p.setHour} />
-                <AdvisoryCard d={data} hour={hour} />
-                <InversionCard d={data} hour={hour} onPick={p.setHour} />
-                <AttributionCard d={data} />
-                <FeedbackCard d={data} hour={hour} />
-                <PlumeCard d={data} />
+                <Tabs defaultValue="air">
+                  <TabsList className="grid h-9 w-full grid-cols-4">
+                    <TabsTrigger value="air">{t("Air")}</TabsTrigger>
+                    <TabsTrigger value="weather">{t("Weather")}</TabsTrigger>
+                    <TabsTrigger value="smoke">{t("Smoke")}</TabsTrigger>
+                    <TabsTrigger value="why">{t("Why")}</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="air" className="mt-4 space-y-4">
+                    <AqiCard d={data} hour={hour} name={p.selected} onPick={p.setHour} />
+                    <BriefingCard d={data} />
+                    <GrapCard d={data} hour={hour} />
+                    <AdvisoryCard d={data} hour={hour} />
+                  </TabsContent>
+                  <TabsContent value="weather" className="mt-4 space-y-4">
+                    <InversionCard d={data} hour={hour} onPick={p.setHour} />
+                    <FeedbackCard d={data} hour={hour} />
+                    <OzoneCard d={data} hour={hour} />
+                  </TabsContent>
+                  <TabsContent value="smoke" className="mt-4 space-y-4">
+                    <PlumeCard d={data} />
+                    <SourceCard d={data} hour={hour} shown={p.layers.source} onShow={() => p.setLayers((l) => ({ ...l, source: true }))} />
+                  </TabsContent>
+                  <TabsContent value="why" className="mt-4 space-y-4">
+                    <AttributionCard d={data} />
+                    <DriversCard d={data} hour={hour} />
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           )}

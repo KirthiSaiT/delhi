@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react"
 import AppWindow from "@/components/AppWindow"
 import Hero from "@/components/Hero"
 import Nav from "@/components/Nav"
-import { Accuracy, Faq, Footer, How, Sources } from "@/components/Sections"
+import { Accuracy, Faq, Footer, How, Modules, Sources } from "@/components/Sections"
+import ValidationSection from "@/components/Validation"
 import type { Basemap, Layers, Region } from "@/components/MapView"
 import { DEFAULT_PARAMS, getForecast, getWhatIf } from "@/lib/api"
 import BacktestSection from "@/components/Backtest"
@@ -17,7 +18,7 @@ export default function App() {
   const [playing, setPlaying] = useState(false)
   const [basemap, setBasemap] = useState<Basemap>("light")
   const [region, setRegion] = useState<Region>("ncr")
-  const [layers, setLayers] = useState<Layers>({ grid: true, fires: true, plume: true })
+  const [layers, setLayers] = useState<Layers>({ grid: true, fires: true, plume: true, source: false })
   const [selected, setSelected] = useState<string | null>(null)
   const [params, setParams] = useState<WhatIfParams>(DEFAULT_PARAMS)
   const [running, setRunning] = useState(false)
@@ -64,8 +65,10 @@ export default function App() {
       </section>
       <Sources />
       <How d={data} />
+      <Modules />
       <Accuracy d={data} />
       <BacktestSection />
+      <ValidationSection />
       <Faq d={data} />
       <Footer />
     </div>

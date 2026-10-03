@@ -1,35 +1,35 @@
 {
- "trained_on": "2023-01-01 00:00:00 to 2026-09-28 23:00:00",
- "n_rows": 2616960,
- "k_aod": 0.006211315167917797,
+ "trained_on": "2023-01-01 00:00:00 to 2026-09-29 23:00:00",
+ "n_rows": 2618880,
+ "k_aod": 0.006211561736916285,
  "holdout": "2025-10-25 to 2025-11-25 (Oct-Nov 2025 stubble season, excluded from training)",
  "metrics": {
   "pm25": {
    "0-24h": {
-    "mae": 18.18,
+    "mae": 15.81,
     "persistence_mae": 29.68,
-    "improvement_pct": 38.8,
-    "r2": 0.695
+    "improvement_pct": 46.7,
+    "r2": 0.758
    },
    "25-48h": {
-    "mae": 22.0,
+    "mae": 21.27,
     "persistence_mae": 35.13,
-    "improvement_pct": 37.4,
-    "r2": 0.626
+    "improvement_pct": 39.5,
+    "r2": 0.657
    },
    "49-72h": {
-    "mae": 23.47,
+    "mae": 23.06,
     "persistence_mae": 38.55,
-    "improvement_pct": 39.1,
-    "r2": 0.609
+    "improvement_pct": 40.2,
+    "r2": 0.627
    }
   },
   "pm10": {
    "0-24h": {
-    "mae": 37.05,
+    "mae": 35.08,
     "persistence_mae": 50.24,
-    "improvement_pct": 26.2,
-    "r2": 0.368
+    "improvement_pct": 30.2,
+    "r2": 0.401
    },
    "25-48h": {
     "mae": 42.76,
@@ -46,10 +46,10 @@
   },
   "o3": {
    "0-24h": {
-    "mae": 15.48,
+    "mae": 14.96,
     "persistence_mae": 61.8,
-    "improvement_pct": 75.0,
-    "r2": 0.881
+    "improvement_pct": 75.8,
+    "r2": 0.886
    },
    "25-48h": {
     "mae": 16.5,
@@ -66,10 +66,10 @@
   },
   "no2": {
    "0-24h": {
-    "mae": 10.14,
+    "mae": 9.96,
     "persistence_mae": 28.03,
-    "improvement_pct": 63.8,
-    "r2": 0.79
+    "improvement_pct": 64.5,
+    "r2": 0.797
    },
    "25-48h": {
     "mae": 11.04,
@@ -117,5 +117,6 @@
   "lon"
  ],
  "caveat": "Ground truth = CAMS analysis via Open-Meteo (no CPCB station key); meteorology at target time comes from archived short-lead NWP, so long-lead skill is slightly optimistic.",
- "built": "2026-09-30 14:08:42.784884"
+ "built": "2026-10-01 21:28:34.438463",
+ "model_note": "PM2.5 predicts the change from the current value; PM10, O3 and NO2 predict absolute levels. A fixed nowcast blend (75/50/25% weight on the current value at +1/+2/+3 h) is applied to all four."
 }

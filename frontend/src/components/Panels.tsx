@@ -1,20 +1,21 @@
-import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, ComposedChart, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts"
+import { useState } from "react"
+import { Flame, Gauge, Layers3, Wind } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import type { Forecast } from "@/lib/types"
 import { INV_COLORS, TONE, aqiCat, aqiColor, fmtTime } from "@/lib/aqi"
-import { useState } from "react"
-import { Flame, Gauge, Layers3, Wind } from "lucide-react"
+import { useT } from "@/lib/i18n"
+import { cn } from "@/lib/utils"
 
 const hr = (t: string) => {
   const d = new Date(t)
   return `${d.toLocaleDateString("en-IN", { weekday: "short" })} ${String(d.getHours()).padStart(2, "0")}h`
 }
 
-function Strip({ colors, hour, onPick }: { colors: string[]; hour: number; onPick: (h: number) => void }) {
+export function Strip({ colors, hour, onPick }: { colors: string[]; hour: number; onPick: (h: number) => void }) {
   return (
     <div className="flex h-6 items-end gap-px">
       {colors.map((c, i) => (
@@ -25,7 +26,7 @@ function Strip({ colors, hour, onPick }: { colors: string[]; hour: number; onPic
   )
 }
 
-function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
+export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="rounded-lg bg-muted px-3 py-2">
       <div className="text-[11px] text-muted-foreground">{label}</div>
@@ -36,6 +37,7 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
 }
 
 export function AqiCard({ d, hour, name, onPick }: { d: Forecast; hour: number; name: string | null; onPick: (h: number) => void }) {
+  const { t } = useT()
   const st = name ? d.stations.find((s) => s.name === name) : null
   const g = (k: "aqi" | "aqi_unc" | "pm25" | "pm10" | "no2" | "o3") => (st ? (st as any)[k][hour] : d.delhi[k][hour])
   const aqi = Math.round(g("aqi")), unc = Math.round(g("aqi_unc")), cat = aqiCat(aqi)
@@ -43,13 +45,13 @@ export function AqiCard({ d, hour, name, onPick }: { d: Forecast; hour: number; 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardDescription>{name ?? "Delhi (11-station mean)"} · {fmtTime(d.times[hour])}</CardDescription>
+        <CardDescription>{name ?? t("Delhi (11-station mean)")} · {fmtTime(d.times[hour])}</CardDescription>
         <div className="flex items-end gap-3">
           <CardTitle className="text-5xl font-bold tabular-nums leading-none">{aqi}</CardTitle>
-          <Badge className={cn("mb-1.5 h-6 px-2.5 text-xs", TONE[cat.tone])}><span className="size-2 rounded-full" style={{ background: cat.color }} />{cat.name}</Badge>
+          <Badge className={cn("mb-1.5 h-6 px-2.5 text-xs", TONE[cat.tone])}><span className="size-2 rounded-full" style={{ background: cat.color }} />{t(cat.name)}</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Coupled AQI {aqi} vs uncoupled {unc} ({aqi - unc >= 0 ? "+" : ""}{aqi - unc} from feedback) · dominant {d.dominant}
+          {t("Coupled AQI")} {aqi} {t("vs uncoupled")} {unc} ({aqi - unc >= 0 ? "+" : ""}{aqi - unc} {t("from feedback")}) · {t("dominant")} {d.dominant}
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -60,7 +62,7 @@ export function AqiCard({ d, hour, name, onPick }: { d: Forecast; hour: number; 
           <Stat label="O₃" value={Math.round(g("o3"))} sub="µg/m³" />
         </div>
         <div>
-          <div className="mb-1 text-[11px] text-muted-foreground">72-hour AQI outlook (tap a bar)</div>
+          <div className="mb-1 text-[11px] text-muted-foreground">{t("72-hour AQI outlook (tap a bar)")}</div>
           <Strip colors={series.map((v) => aqiColor(v))} hour={hour} onPick={onPick} />
         </div>
       </CardContent>
@@ -86,6 +88,7 @@ function GaugeSvg({ value }: { value: number }) {
 }
 
 export function InversionCard({ d, hour, onPick }: { d: Forecast; hour: number; onPick: (h: number) => void }) {
+  const { t } = useT()
   const inv = d.delhi.inv[hour], cls = d.inversion.classes[hour], pbl = d.delhi.pbl[hour], vent = d.delhi.vent[hour]
   const ventLabel = vent < 2000 ? "very poor" : vent < 6000 ? "poor" : "adequate"
   const trap = Math.min(10, 1000 / Math.max(pbl, 60))
@@ -93,50 +96,50 @@ export function InversionCard({ d, hour, onPick }: { d: Forecast; hour: number; 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><Layers3 className="size-4 text-primary" />Atmospheric inversion</CardTitle>
-        <CardDescription>T(925 hPa) − T(surface). Positive = warm air lid trapping pollutants.</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><Layers3 className="size-4 text-primary" />{t("Atmospheric inversion")}</CardTitle>
+        <CardDescription>{t("T(925 hPa) − T(surface). Positive = warm air lid trapping pollutants.")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-4">
           <div className="w-[46%] shrink-0"><GaugeSvg value={inv} />
             <div className="-mt-1 text-center text-xl font-bold tabular-nums">{inv > 0 ? "+" : ""}{inv.toFixed(1)}°C</div></div>
           <div className="space-y-1.5">
-            <Badge className={cn("h-6 px-2.5", TONE[tone])}>{d.inversion.names[cls]} inversion</Badge>
-            <div className="text-xs text-muted-foreground">PBL height <b className="text-foreground">{Math.round(pbl)} m</b></div>
-            <div className="text-xs text-muted-foreground">Ventilation <b className="text-foreground">{Math.round(vent)} m²/s</b> ({ventLabel})</div>
-            <div className="text-xs text-muted-foreground">Trapping factor <b className="text-foreground">×{trap.toFixed(1)}</b></div>
+            <Badge className={cn("h-6 px-2.5", TONE[tone])}>{t(d.inversion.names[cls])} {t("inversion")}</Badge>
+            <div className="text-xs text-muted-foreground">{t("PBL height")} <b className="text-foreground">{Math.round(pbl)} m</b></div>
+            <div className="text-xs text-muted-foreground">{t("Ventilation")} <b className="text-foreground">{Math.round(vent)} m²/s</b> ({t(ventLabel)})</div>
+            <div className="text-xs text-muted-foreground">{t("Trapping factor")} <b className="text-foreground">×{trap.toFixed(1)}</b></div>
           </div>
         </div>
         <Strip colors={d.inversion.classes.map((c) => INV_COLORS[c])} hour={hour} onPick={onPick} />
         <p className="text-xs text-muted-foreground">
-          {d.inversion.hours_moderate_or_strong} h of moderate/strong inversion in the next 72 h · peak +{d.inversion.max_c}°C at +{d.inversion.max_hour}h · lowest PBL {d.inversion.min_pbl_m} m
+          {d.inversion.hours_moderate_or_strong} h {t("of moderate/strong inversion in the next 72 h")} · {t("peak")} +{d.inversion.max_c}°C {t("at")} +{d.inversion.max_hour}h · {t("lowest PBL")} {d.inversion.min_pbl_m} m
         </p>
       </CardContent>
     </Card>
   )
 }
 
-const rows = (d: Forecast, a: string, b: string, c?: string) => d.times.map((t, i) => ({
-  i, label: hr(t), a: d.delhi[a][i], b: d.delhi[b][i], ...(c ? { c: d.delhi[c][i] } : {}) }))
+const rows = (d: Forecast, a: string, b: string) => d.times.map((t, i) => ({ i, label: hr(t), a: d.delhi[a][i], b: d.delhi[b][i] }))
 
 export function FeedbackCard({ d, hour }: { d: Forecast; hour: number }) {
+  const { t } = useT()
   const [tab, setTab] = useState("pm25")
-  const cfg: Record<string, [string, string, string, string]> = {
-    pm25: ["pm25", "pm25_unc", "PM2.5 µg/m³", "Coupled"],
-    pbl: ["pbl", "pbl_nwp", "PBL height m", "Coupled"],
-    t2m: ["t2m", "t2m_nwp", "2 m temperature °C", "Coupled"],
+  const cfg: Record<string, [string, string, string]> = {
+    pm25: ["pm25", "pm25_unc", "PM2.5 µg/m³"],
+    pbl: ["pbl", "pbl_nwp", "PBL height m"],
+    t2m: ["t2m", "t2m_nwp", "2 m temperature °C"],
   }
   const [a, b, unit] = cfg[tab]
-  const config: ChartConfig = { a: { label: "Coupled (with feedback)", color: "#e03e3e" }, b: { label: tab === "pm25" ? "Uncoupled (one-way)" : "NWP (no aerosol feedback)", color: "#9b9a97" } }
+  const config: ChartConfig = { a: { label: t("Coupled (with feedback)"), color: "#e03e3e" }, b: { label: tab === "pm25" ? t("Uncoupled (one-way)") : t("NWP (no aerosol feedback)"), color: "#9b9a97" } }
   const f = d.feedback
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><Wind className="size-4 text-primary" />Two-way weather ↔ chemistry feedback</CardTitle>
-        <CardDescription>Aerosols dim sunlight → cooler surface, shallower PBL → more trapped PM2.5. Iterated to convergence.</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><Wind className="size-4 text-primary" />{t("Two-way weather ↔ chemistry feedback")}</CardTitle>
+        <CardDescription>{t("Aerosols dim sunlight → cooler surface, shallower PBL → more trapped PM2.5. Iterated to convergence.")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Tabs value={tab} onValueChange={setTab}><TabsList className="h-8"><TabsTrigger value="pm25">PM2.5</TabsTrigger><TabsTrigger value="pbl">PBL</TabsTrigger><TabsTrigger value="t2m">Temp</TabsTrigger></TabsList></Tabs>
+        <Tabs value={tab} onValueChange={setTab}><TabsList className="h-8"><TabsTrigger value="pm25">PM2.5</TabsTrigger><TabsTrigger value="pbl">PBL</TabsTrigger><TabsTrigger value="t2m">{t("Temp")}</TabsTrigger></TabsList></Tabs>
         <ChartContainer config={config} className="h-[170px] w-full">
           <LineChart data={rows(d, a, b)} margin={{ left: -14, right: 6, top: 6 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -149,12 +152,12 @@ export function FeedbackCard({ d, hour }: { d: Forecast; hour: number }) {
             <ChartLegend content={<ChartLegendContent />} />
           </LineChart>
         </ChartContainer>
-        <div className="text-[11px] text-muted-foreground">{unit} · Delhi mean</div>
+        <div className="text-[11px] text-muted-foreground">{unit} · {t("Delhi mean")}</div>
         <div className="grid grid-cols-2 gap-2">
-          <Stat label="PM2.5 uplift" value={`+${f.pm25_uplift_mean} µg/m³`} sub={`max +${f.pm25_uplift_max} at +${f.pm25_uplift_hour}h`} />
-          <Stat label="Daytime cooling" value={`${f.day_cooling_c}°C`} sub={`AOD peak ${f.aod_peak}`} />
-          <Stat label="Daytime PBL" value={`−${f.pbl_reduction_pct}%`} sub="vs NWP" />
-          <Stat label="Coupling loop" value={`${f.iterations} iterations`} sub={`residual ${f.residual_ugm3[0]} → ${f.residual_ugm3.at(-1)} µg/m³`} />
+          <Stat label={t("PM2.5 uplift")} value={`+${f.pm25_uplift_mean} µg/m³`} sub={`${t("max")} +${f.pm25_uplift_max} ${t("at")} +${f.pm25_uplift_hour}h`} />
+          <Stat label={t("Daytime cooling")} value={`${f.day_cooling_c}°C`} sub={`AOD ${t("peak")} ${f.aod_peak}`} />
+          <Stat label={t("Daytime PBL")} value={`−${f.pbl_reduction_pct}%`} sub={t("vs NWP")} />
+          <Stat label={t("Coupling loop")} value={`${f.iterations} ${t("iterations")}`} sub={`${t("residual")} ${f.residual_ugm3[0]} → ${f.residual_ugm3.at(-1)} µg/m³`} />
         </div>
       </CardContent>
     </Card>
@@ -162,25 +165,26 @@ export function FeedbackCard({ d, hour }: { d: Forecast; hour: number }) {
 }
 
 export function PlumeCard({ d }: { d: Forecast }) {
+  const { t } = useT()
   const s = d.plume.summary
-  const config: ChartConfig = { a: { label: "Stubble PM2.5 at Delhi", color: "#d9730d" } }
-  const data = d.times.map((t, i) => ({ label: hr(t), a: d.delhi.stubble[i] }))
+  const config: ChartConfig = { a: { label: t("Stubble PM2.5 at Delhi"), color: "#d9730d" } }
+  const data = d.times.map((tm, i) => ({ label: hr(tm), a: d.delhi.stubble[i] }))
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><Flame className="size-4 text-orange-600" />Stubble-burning plume</CardTitle>
-        <CardDescription>{d.scenario === "peak" ? "Synthetic peak-season fires (scenario)" : "Real NASA FIRMS VIIRS detections, last 24 h"}</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><Flame className="size-4 text-orange-600" />{t("Stubble-burning plume")}</CardTitle>
+        <CardDescription>{d.scenario === "peak" ? t("Synthetic peak-season fires (scenario)") : t("Real NASA FIRMS VIIRS detections, last 24 h")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {s.n_fires === 0 ? (
-          <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">No active fire detections over Punjab/Haryana in the last 24 h (off-season). Switch to the stubble-season what-if to see plume dispersion.</p>
+          <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">{t("No active fire detections over Punjab/Haryana in the last 24 h (off-season). Switch to the stubble-season what-if to see plume dispersion.")}</p>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-2">
-              <Stat label="Fire detections" value={s.n_fires} sub={`${Math.round(s.total_frp)} MW total FRP`} />
-              <Stat label="Reaches Delhi" value={s.arrival_h == null ? "—" : s.arrival_h === 0 ? "Already" : `+${s.arrival_h} h`} sub="mean >5 µg/m³" />
-              <Stat label="Peak contribution" value={`${s.peak_ugm3} µg/m³`} sub={s.peak_h != null ? `at +${s.peak_h} h` : ""} />
-              <Stat label="Transport" value={`${Math.round(d.delhi_wd[0])}°`} sub="wind from (Delhi)" />
+              <Stat label={t("Fire detections")} value={s.n_fires} sub={`${Math.round(s.total_frp)} MW ${t("total FRP")}`} />
+              <Stat label={t("Reaches Delhi")} value={s.arrival_h == null ? "—" : s.arrival_h === 0 ? t("Already") : `+${s.arrival_h} h`} sub={t("mean >5 µg/m³")} />
+              <Stat label={t("Peak contribution")} value={`${s.peak_ugm3} µg/m³`} sub={s.peak_h != null ? `${t("at")} +${s.peak_h} h` : ""} />
+              <Stat label={t("Transport")} value={`${Math.round(d.delhi_wd[0])}°`} sub={t("wind from (Delhi)")} />
             </div>
             <ChartContainer config={config} className="h-[110px] w-full">
               <AreaChart data={data} margin={{ left: -20, right: 6 }}>
@@ -199,33 +203,46 @@ export function PlumeCard({ d }: { d: Forecast }) {
 }
 
 export function ForecastChart({ d, hour, name }: { d: Forecast; hour: number; name: string | null }) {
+  const { t } = useT()
   const st = name ? d.stations.find((s) => s.name === name) : null
   const src = (k: string): number[] => (st ? (st as any)[k] : d.delhi[k])
-  const data = d.times.map((t, i) => ({ label: hr(t), coupled: src("pm25")[i], uncoupled: src("pm25_unc")[i], cams: src("pm25_cams")[i] }))
+  const band = d.uncertainty.available
+  const lo = src("pm25_lo"), hi = src("pm25_hi")
+  const data = d.times.map((tm, i) => ({
+    label: hr(tm), coupled: src("pm25")[i], uncoupled: src("pm25_unc")[i], cams: src("pm25_cams")[i],
+    lo: lo[i], band: Math.max(hi[i] - lo[i], 0) }))
+  const cov = d.uncertainty.holdout_coverage?.overall
   const config: ChartConfig = {
-    coupled: { label: "AirCouple (coupled)", color: "#0075de" },
-    uncoupled: { label: "Uncoupled", color: "#9b9a97" },
-    cams: { label: "CAMS baseline (global model)", color: "#0f9d58" },
+    coupled: { label: t("AirCouple (coupled)"), color: "#0075de" },
+    uncoupled: { label: t("Uncoupled"), color: "#9b9a97" },
+    cams: { label: t("CAMS baseline (global model)"), color: "#0f9d58" },
+    band: { label: t("Likely range (10th–90th percentile)"), color: "#0075de" },
   }
+  const tip = (p: any) => <ChartTooltipContent {...p} payload={(p.payload ?? []).filter((x: any) => x.dataKey !== "lo" && x.dataKey !== "band")} />
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm"><Gauge className="size-4 text-primary" />PM2.5 forecast — {name ?? "Delhi mean"}</CardTitle>
-        <CardDescription>Click a station on the map to switch. Live mode is compared against the CAMS global-model baseline.</CardDescription>
+        <CardTitle className="flex items-center gap-2 text-sm"><Gauge className="size-4 text-primary" />{t("PM2.5 forecast")} — {name ?? t("Delhi mean")}</CardTitle>
+        <CardDescription>
+          {t("Click a station on the map to switch. Live mode is compared against the CAMS global-model baseline.")}
+          {band && cov != null && ` ${t("The shaded range covered")} ${cov}% ${t("of real values on the held-out season (target 80%): a little too narrow.")}`}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={config} className="h-[220px] w-full">
-          <LineChart data={data} margin={{ left: -14, right: 8, top: 6 }}>
+          <ComposedChart data={data} margin={{ left: -14, right: 8, top: 6 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} interval={11} fontSize={10} />
             <YAxis tickLine={false} axisLine={false} fontSize={10} width={40} />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <ChartTooltip content={tip} />
             <ReferenceLine x={hr(d.times[hour])} stroke="#0075de" strokeDasharray="4 3" />
+            {band && <Area dataKey="lo" stackId="b" stroke="none" fill="transparent" legendType="none" isAnimationActive={false} />}
+            {band && <Area dataKey="band" stackId="b" stroke="none" fill="var(--color-band)" fillOpacity={0.14} isAnimationActive={false} />}
             {d.has_cams && <Line dataKey="cams" stroke="var(--color-cams)" strokeWidth={1.6} dot={false} />}
             <Line dataKey="uncoupled" stroke="var(--color-uncoupled)" strokeWidth={1.6} dot={false} strokeDasharray="4 3" />
             <Line dataKey="coupled" stroke="var(--color-coupled)" strokeWidth={2.4} dot={false} />
             <ChartLegend content={<ChartLegendContent />} />
-          </LineChart>
+          </ComposedChart>
         </ChartContainer>
       </CardContent>
     </Card>

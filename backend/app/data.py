@@ -73,7 +73,7 @@ def fetch_wind_grid(hours_from_now_start_iso=None):
         res += _multi("https://api.open-meteo.com/v1/forecast", [p[0] for p in ch], [p[1] for p in ch],
                       ["wind_speed_10m", "wind_direction_10m", "wind_speed_925hPa",
                        "wind_direction_925hPa", "boundary_layer_height"],
-                      dict(past_days=1, forecast_days=5, wind_speed_unit="ms"))
+                      dict(past_days=3, forecast_days=5, wind_speed_unit="ms"))
     times = pd.to_datetime(res[0]["hourly"]["time"]).to_numpy()
     ny, nx = len(WIND_LATS), len(WIND_LONS)
     out = {}

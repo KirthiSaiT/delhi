@@ -93,10 +93,24 @@ PARAMS = dict(n_estimators=400, learning_rate=0.05, num_leaves=63, min_child_sam
               subsample=0.8, subsample_freq=1, colsample_bytree=0.8, verbose=-1, n_jobs=-1)
 
 
+BASE = {"pm25": "pm2_5_0", "pm10": "pm10_0", "o3": "ozone_0", "no2": "nitrogen_dioxide_0"}
+_BI = {k: FEATS.index(v) for k, v in BASE.items()}
+
+
+RESIDUAL = {"pm25"}   # PM2.5 predicts the change from now (better at every lead); the others predict absolute levels
+
+
+def base_log(X, k):
+    """log1p of the pollutant's current value: the model predicts the CHANGE from now, which fixes short-lead skill."""
+    if k not in RESIDUAL:
+        return np.zeros(len(X))
+    return np.log1p(np.clip(np.nan_to_num(X[:, _BI[k]], nan=0.0), 0, None))
+
+
 def fit(X, Y, mask=None):
     models = {}
     for k in TARGETS:
-        y = np.log1p(np.clip(Y[k], 0, None))
+        y = np.log1p(np.clip(Y[k], 0, None)) - base_log(X, k)
         ok = np.isfinite(y) & (np.isfinite(X).sum(1) > len(FEATS) * 0.8)
         if mask is not None:
             ok &= mask
@@ -106,8 +120,24 @@ def fit(X, Y, mask=None):
     return models
 
 
+def nowcast_weight(X):
+    """Fixed short-lead rule (not tuned): 75% / 50% / 25% weight on the current value at +1 / +2 / +3 h, 0 after."""
+    return np.clip((4.0 - X[:, 0]) / 4.0, 0.0, 1.0)
+
+
+def predict_flat(models, X):
+    """Pollutant forecasts for every row of X (1-D arrays), including the short-lead nowcast blend."""
+    w = nowcast_weight(X)
+    out = {}
+    for k, m in models.items():
+        p = np.clip(np.expm1(m.predict(X) + base_log(X, k)), 0, None)
+        cur = X[:, _BI[k]]
+        out[k] = np.where(np.isfinite(cur), w * np.nan_to_num(cur) + (1 - w) * p, p)
+    return out
+
+
 def predict(models, X, S, H):
-    return {k: np.clip(np.expm1(m.predict(X)), 0, None).reshape(S, H) for k, m in models.items()}
+    return {k: v.reshape(S, H) for k, v in predict_flat(models, X).items()}
 
 
 def load():

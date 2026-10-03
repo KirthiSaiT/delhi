@@ -5,7 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 from .config import *
-from . import data, model, physics, plume
+from . import data, insights, model, physics, plume, trajectory, verification
 
 N_DELHI = 11  # first 11 stations are inside Delhi
 SCENARIOS = {
@@ -98,7 +98,7 @@ def build(scenario="live", params=None, save=True):
     if scenario == "peak":
         _apply_haze_start(A, t0, meta, P["start_pm25"])
         _apply_stagnation(A, sl, P["pbl_scale"], P["wind_scale"])
-        wsl = slice(max(int(np.searchsorted(wtimes, np.datetime64(now))) - plume.SPINUP, 0), None)
+        wsl = slice(max(int(np.searchsorted(wtimes, np.datetime64(now))) - max(plume.SPINUP, 72), 0), None)
         W["boundary_layer_height"][wsl] *= P["pbl_scale"]
         W["wind_speed_10m"][wsl] *= P["wind_scale"]
         W["wind_direction_10m"][wsl] = 315.0
@@ -108,6 +108,16 @@ def build(scenario="live", params=None, save=True):
     extra = pl["contrib"][:, 1:]
     unc, cur, met, diag, hist, base = model.coupled_forecast(models, meta, A, times, t0, extra_pm25=extra)
 
+    hs_all = np.arange(1, H + 1)
+    X_unc, _ = model.assemble(model.derive(A), times, [t0], hs_all)
+    drv = insights.drivers(models, X_unc, N_DELHI)
+    qm = insights.load_quantile_models()
+    if qm:
+        lo_fc, hi_fc = insights.bands(qm, X_unc, unc["pm25"] - extra, cur["pm25"], S, H)
+    else:
+        lo_fc, hi_fc = cur["pm25"], cur["pm25"]
+    back = trajectory.run_back(wtimes, W, now.to_datetime64(), fires)
+
     def series(now_v, fc):  # prepend h=0 state
         return np.concatenate([now_v[:, None], fc], axis=1)
 
@@ -116,6 +126,8 @@ def build(scenario="live", params=None, save=True):
     st["pm25"] = series(A["pm2_5"][:, t0], cur["pm25"])
     st["pm25_unc"] = series(A["pm2_5"][:, t0], unc["pm25"])
     st["pm25_cams"] = series(A["pm2_5"][:, t0], cams_pm25)
+    st["pm25_lo"] = series(A["pm2_5"][:, t0], lo_fc)
+    st["pm25_hi"] = series(A["pm2_5"][:, t0], hi_fc)
     st["pm10"] = np.maximum(series(A["pm10"][:, t0], cur["pm10"]), st["pm25"] * 1.15)
     st["no2"] = series(A["nitrogen_dioxide"][:, t0], cur["no2"])
     st["o3"] = series(A["ozone"][:, t0], cur["o3"])
@@ -143,7 +155,7 @@ def build(scenario="live", params=None, save=True):
     st["stubble"] = pl["contrib"]
 
     dl = lambda k: st[k][:N_DELHI].mean(0)
-    delhi = {k: dl(k) for k in ["aqi", "aqi_unc", "pm25", "pm25_unc", "pm25_cams", "pm10", "no2", "o3", "pbl", "pbl_nwp",
+    delhi = {k: dl(k) for k in ["aqi", "aqi_unc", "pm25", "pm25_unc", "pm25_cams", "pm25_lo", "pm25_hi", "pm10", "no2", "o3", "pbl", "pbl_nwp",
                                 "t2m", "t2m_nwp", "inv", "inv_nwp", "vent", "ws", "stubble"]}
     dom = np.bincount(st["dom"][:N_DELHI, 1:].ravel().astype(int), minlength=4).argmax()
     inv_cls = physics.inversion_class(delhi["inv"])
@@ -180,10 +192,15 @@ def build(scenario="live", params=None, save=True):
     for i, (name, la, lo) in enumerate(STATIONS):
         stations.append(dict(
             name=name, lat=la, lon=lo, delhi=i < N_DELHI,
-            **{k: _r(st[k][i], 1) for k in ["pm25", "pm25_unc", "pm25_cams", "pm10", "no2", "o3", "pbl", "pbl_nwp",
+            **{k: _r(st[k][i], 1) for k in ["pm25", "pm25_unc", "pm25_cams", "pm25_lo", "pm25_hi", "pm10", "no2", "o3", "pbl", "pbl_nwp",
                                               "t2m", "t2m_nwp", "inv", "ws", "vent", "stubble"]},
             aqi=_r(st["aqi"][i], 0), aqi_unc=_r(st["aqi_unc"][i], 0), dom=st["dom"][i].astype(int).tolist(),
             wd=_r(st["wd"][i], 0)))
+
+    t_str = [str(t)[:16] for t in t_idx]
+    ozone = insights.ozone_nox(t_str, delhi["o3"], delhi["no2"], delhi["pbl"],
+                               A["ozone"][:N_DELHI, t0 - 23:t0].mean(0), A["nitrogen_dioxide"][:N_DELHI, t0 - 23:t0].mean(0))
+    qmeta = insights.quantile_meta()
 
     payload = dict(
         scenario=scenario, has_cams=scenario == "live", scenario_label=SCENARIOS[scenario], generated=str(pd.Timestamp.now().round("s")),
@@ -194,10 +211,18 @@ def build(scenario="live", params=None, save=True):
                        max_c=round(float(delhi["inv"].max()), 1), max_hour=int(delhi["inv"].argmax()),
                        min_pbl_m=round(float(delhi["pbl"].min())), min_vent=round(float(delhi["vent"].min()))),
         dominant=physics.DOMINANT[int(dom)],
+        grap=insights.grap(delhi["aqi"]), ozone=ozone, drivers=drv, back=back,
+        uncertainty=dict(available=bool(qm), band="10th to 90th percentile", target_coverage=80,
+                         holdout_coverage=(qmeta or {}).get("holdout_coverage"),
+                         note="Per-station bands averaged over Delhi; a true city-mean band would be somewhat narrower."),
         feedback=feedback, attribution=attribution, params=P if scenario == "peak" else None,
         plume=dict(frames=pl["frames"], fires=pl["fires"], summary=pl["summary"]),
         stations=stations, grid=grid, meta=dict(k_aod=meta["k_aod"], metrics=meta["metrics"], trained_on=meta["trained_on"],
                                                 holdout=meta["holdout"], caveat=meta["caveat"]))
     if save and P == DEFAULTS:
         (CACHE / f"forecast_{scenario}.json").write_text(json.dumps(payload, allow_nan=False))
+        try:
+            verification.log_run(payload)
+        except Exception as e:                      # logging must never break a forecast
+            print("verification log failed:", repr(e))
     return payload

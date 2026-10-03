@@ -14,3 +14,8 @@ backend/cache/forecast_*.json
 backend/models/*_v1.*
 # secrets
 .env
+
+# local backups and runtime logs
+backend/models/pre_residual/
+backend/cache/pre_residual/
+backend/cache/verification/

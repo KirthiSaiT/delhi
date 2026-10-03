@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Flame, Layers3, Wind } from "lucide-react"
+import { Compass, Download, Flame, Globe2, Landmark, Layers3, ListChecks, ShieldCheck, SlidersHorizontal, Split, Sun, Wind } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,14 +7,16 @@ import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TONE } from "@/lib/aqi"
+import { useT } from "@/lib/i18n"
 import type { Forecast } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Logo } from "@/components/Nav"
 
 export function Sources() {
+  const { t } = useT()
   return (
     <div className="mx-auto mt-10 max-w-[1240px] px-4 text-center">
-      <p className="text-xs text-muted-foreground">Built on open data</p>
+      <p className="text-xs text-muted-foreground">{t("Built on open data")}</p>
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm font-semibold text-foreground/60">
         {["Open-Meteo", "Copernicus CAMS", "NASA FIRMS", "OpenStreetMap", "LightGBM"].map((s) => <span key={s}>{s}</span>)}
       </div>
@@ -23,6 +25,7 @@ export function Sources() {
 }
 
 export function How({ d }: { d: Forecast | null }) {
+  const { t } = useT()
   const f = d?.feedback, inv = d?.inversion, s = d?.plume.summary
   const items = [
     { icon: Wind, tone: "blue" as const, title: "Two-way feedback",
@@ -38,15 +41,15 @@ export function How({ d }: { d: Forecast | null }) {
   return (
     <section id="how" className="mx-auto max-w-[1240px] px-4 pt-24">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="section-title text-4xl sm:text-5xl">Weather and pollution, finally in one loop.</h2>
-        <p className="mt-4 text-lg text-foreground/70">Standard AQI models treat meteorology and chemistry separately. In Delhi they push on each other.</p>
+        <h2 className="section-title text-4xl sm:text-5xl">{t("Weather and pollution, finally in one loop.")}</h2>
+        <p className="mt-4 text-lg text-foreground/70">{t("Standard AQI models treat meteorology and chemistry separately. In Delhi they push on each other.")}</p>
       </div>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {items.map((it) => (
           <Card key={it.title} className="gap-3 p-6">
             <div className={cn("flex size-10 items-center justify-center rounded-lg", TONE[it.tone])}><it.icon className="size-5" /></div>
-            <CardTitle className="text-xl font-bold tracking-tight">{it.title}</CardTitle>
-            <CardDescription className="text-[15px] leading-relaxed text-foreground/70">{it.body}</CardDescription>
+            <CardTitle className="text-xl font-bold tracking-tight">{t(it.title)}</CardTitle>
+            <CardDescription className="text-[15px] leading-relaxed text-foreground/70">{t(it.body)}</CardDescription>
             <Separator className="my-1" />
             <p className="text-sm font-medium tabular-nums">{it.stat}</p>
           </Card>
@@ -59,12 +62,13 @@ export function How({ d }: { d: Forecast | null }) {
 const NAMES: Record<string, string> = { pm25: "PM2.5", pm10: "PM10", o3: "Ozone", no2: "NO₂" }
 
 export function Accuracy({ d }: { d: Forecast | null }) {
+  const { t } = useT()
   const [k, setK] = useState("pm25")
   const m = d?.meta.metrics[k] ?? {}
   return (
     <section id="accuracy" className="mx-auto max-w-[1240px] px-4 pt-24">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="section-title text-4xl sm:text-5xl">Tested on a season it never saw.</h2>
+        <h2 className="section-title text-4xl sm:text-5xl">{t("Tested on a season it never saw.")}</h2>
         <p className="mt-4 text-lg text-foreground/70">
           {d ? `Hold-out: ${d.meta.holdout}.` : "Loading…"} Skill is measured against persistence — assuming today's air stays as it is.
         </p>
@@ -107,14 +111,15 @@ const FAQ: [string, string][] = [
 ]
 
 export function Faq({ d }: { d: Forecast | null }) {
+  const { t, lang } = useT()
   return (
     <section id="faq" className="mx-auto max-w-3xl px-4 pt-24">
-      <h2 className="section-title text-center text-4xl sm:text-5xl">Method & limitations</h2>
+      <h2 className="section-title text-center text-4xl sm:text-5xl">{t("Method & limitations")}</h2>
       <Accordion className="mt-8">
         {FAQ.map(([q, a], i) => (
           <AccordionItem key={q} value={`q${i}`}>
-            <AccordionTrigger className="text-base font-semibold">{q}</AccordionTrigger>
-            <AccordionContent className="text-[15px] leading-relaxed text-foreground/75">{a}{i === 3 && d ? ` ${d.meta.caveat}` : ""}</AccordionContent>
+            <AccordionTrigger className="text-base font-semibold">{t(q)}</AccordionTrigger>
+            <AccordionContent className="text-[15px] leading-relaxed text-foreground/75">{t(a)}{i === 3 && d && lang === "en" ? ` ${d.meta.caveat}` : ""}</AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
@@ -123,13 +128,50 @@ export function Faq({ d }: { d: Forecast | null }) {
 }
 
 export function Footer() {
+  const { t } = useT()
   return (
     <footer className="mx-auto mt-24 max-w-[1240px] px-4 pb-10">
       <Separator />
       <div className="flex flex-wrap items-center justify-between gap-3 pt-6 text-xs text-muted-foreground">
         <Logo />
-        <span>SIH 2026 · PS 26082 · Ministry of Earth Sciences / NCMRWF · Data © Open-Meteo, Copernicus CAMS, NASA FIRMS, OpenStreetMap contributors</span>
+        <span>SIH 2026 · PS 26082 · {t("Ministry of Earth Sciences / NCMRWF")} · {t("Data")} © Open-Meteo, Copernicus CAMS, NASA FIRMS, OpenStreetMap contributors · <a className="underline" href="/docs">{t("API docs")}</a> · <a className="underline" href="https://github.com/KirthiSaiT/delhi">GitHub</a></span>
       </div>
     </footer>
+  )
+}
+
+const MODULES: { icon: typeof Wind; title: string; body: string }[] = [
+  { icon: Wind, title: "Two-way feedback", body: "Smoke dims sunlight, the surface cools, the mixing layer shrinks, PM2.5 rises. Iterated to a stable answer." },
+  { icon: Layers3, title: "Inversion tracker", body: "Strength, PBL height, ventilation and a trapping factor, every hour." },
+  { icon: Flame, title: "Stubble plume", body: "Satellite fires carried to Delhi on the forecast wind; a shallow lid amplifies the spike." },
+  { icon: Compass, title: "Source region", body: "Wind run backwards from Delhi shows where the air came from and how much fire it passed." },
+  { icon: Sun, title: "Ozone and NOx", body: "Afternoon ozone peaks and night-time NO₂ build-up under the lid." },
+  { icon: Landmark, title: "GRAP stage forecast", body: "Which Graded Response Action Plan stage the forecast AQI would trigger, with typical actions." },
+  { icon: Split, title: "Attribution and drivers", body: "Background vs stubble vs feedback, and which conditions push the forecast up or down." },
+  { icon: ShieldCheck, title: "Uncertainty and validation", body: "A likely range, a real-episode replay, error by place and category, and a live check against CAMS." },
+  { icon: SlidersHorizontal, title: "Scenario controls", body: "Change fires, wind, mixing depth and starting haze, and re-run the whole system." },
+  { icon: ListChecks, title: "Health advisory", body: "CPCB-style guidance with the best and worst hours to be outdoors." },
+  { icon: Download, title: "Open data", body: "Download the forecast as CSV or call the API; full docs included." },
+  { icon: Globe2, title: "Hindi and English", body: "Switch language from the top bar; works on phones and installs like an app." },
+]
+
+export function Modules() {
+  const { t } = useT()
+  return (
+    <section id="modules" className="mx-auto max-w-[1240px] px-4 pt-24">
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="section-title text-4xl sm:text-5xl">{t("Everything in one dashboard.")}</h2>
+        <p className="mt-4 text-lg text-foreground/70">{t("Twelve modules, each answering a question a forecaster, planner or citizen would ask.")}</p>
+      </div>
+      <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {MODULES.map((m) => (
+          <Card key={m.title} className="gap-2 p-5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground"><m.icon className="size-4.5" /></div>
+            <CardTitle className="text-[15px] font-semibold tracking-tight">{t(m.title)}</CardTitle>
+            <CardDescription className="text-sm leading-relaxed text-foreground/70">{t(m.body)}</CardDescription>
+          </Card>
+        ))}
+      </div>
+    </section>
   )
 }

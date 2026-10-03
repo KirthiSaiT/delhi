@@ -1,0 +1,267 @@
+=====================================================================
+AIRCOUPLE - SIH 2026 PPT REVIEW  (team CyberNova, PS 26082)
+Deck reviewed: https://canva.link/948lbvr3cfw78ff   (6 slides, read only - nothing was edited)
+=====================================================================
+
+VERDICT
+  Good base, NOT ready to submit yet.
+  The 6-slide structure is right and the deck is honest about limits.
+  But it has unfilled placeholders, one outdated number, and it leaves out
+  most of the newer modules and any proof (results, screenshots, demo link).
+
+
+---------------------------------------------------------------------
+PART 1. MUST FIX (mistakes and unfinished items)
+---------------------------------------------------------------------
+[ ] 1. SLIDE 5 - two boxes still say "Screenshot". Replace with real
+        dashboard screenshots.
+[ ] 2. SLIDE 5 - stray text fragment "risk hours." at the bottom of the
+        slide. Delete it, or finish the sentence it belongs to.
+[ ] 3. SLIDE 1 - "Team ID -" is blank. Copy it from the SIH portal.
+[ ] 4. SLIDE 6 - outdated accuracy number: "PM2.5 error was about 39% lower
+        than no change". Current results are:
+           first 24 h : 47% lower   (error 15.8 vs 29.7, R2 0.76)
+           25-48 h    : 40% lower   (error 21.3 vs 35.1, R2 0.66)
+           49-72 h    : 40% lower   (error 23.1 vs 38.6, R2 0.63)
+           real-episode replay (5 forecasts, Oct-Nov 2025): 44% lower,
+           and all five beat "no change".
+[ ] 5. SLIDE 6 - "Project Resources - GitHub:" shows no visible link.
+        Put the URL in plain text: github.com/KirthiSaiT/delhi
+        (and add a QR code). IMPORTANT: the new modules are not on GitHub
+        yet - push before submitting, or the link shows an older version.
+[ ] 6. SLIDE 3 - typo "Four-polluant forecasts"  ->  "Four-pollutant forecasts".
+[ ] 7. SLIDE 3 - "NASA Firms"  ->  "NASA FIRMS".
+[ ] 8. SLIDE 3 - architecture diagram: its small title looked like it says
+        "BRIGHT - System Architecture" (I could not read it clearly).
+        Zoom in and make sure it is the AirCouple diagram and not left over
+        from another project.
+[ ] 9. SLIDE 6 - it is a wall of small text. The SIH template asks for
+        points, diagrams and pictures, not paragraphs. Cut to 3-4 short
+        bullets per block, and keep the full text in the Notion page.
+[ ] 10. SLIDE 6 - verify every figure and paper you cite by opening the
+        source (I could not check them):
+          - "stubble raised Delhi PM2.5 by about 50-75% in Oct-Nov"
+          - "share ranges from about 14% to over 60% across studies"
+          - the ACP 2024 paper (aerosol-radiation feedback improved Delhi
+            PM2.5 and temperature forecasts)
+          - Grell et al. 2005 and Bharali et al. 2019 details
+
+
+---------------------------------------------------------------------
+PART 2. MISSING FROM THE SOLUTION (built, but not shown in the deck)
+---------------------------------------------------------------------
+Priority A = add before submitting.   Priority B = add if there is space.
+
+A1. OZONE AND NOx  (Slide 2, one line on Slide 3)
+    The problem statement names ground-level ozone and NOx explicitly.
+    The deck only says "4 pollutants". Say "PM2.5, PM10, NO2 and ozone,
+    with a dedicated ozone/NOx view".
+
+A2. GRAP STAGE FORECAST + HEALTH ADVISORY  (Slide 2 outputs, Slide 5)
+    The statement asks for actionable insights. We forecast which Delhi
+    GRAP stage (I-IV) the AQI would trigger, with typical actions, and give
+    health advice with the best and worst hours. Label it "indicative".
+    Add CAQM / CPCB / state pollution boards to the "who benefits" list.
+
+A3. PROOF OF RESULTS  (Slide 4 - currently risks only, no evidence)
+    Add one results block:
+      - Tested on the Oct-Nov 2025 stubble season, which the model never saw
+      - First 24 h PM2.5 error 47% lower than "no change" (R2 0.76)
+      - Real-episode replay: 44% lower error, all 5 forecasts better
+      - 31 automated tests; the system scores its own live forecasts
+    Keep the honest line: "Feedback accuracy gain not demonstrated
+    (17.6 vs 17.5)". Judges respect it.
+
+A4. WORKING-PROTOTYPE EVIDENCE  (Slides 2, 3, 5)
+    The template asks for a working prototype. Add dashboard screenshots
+    (see Part 4), a demo QR code or short video link, and the GitHub link.
+
+A5. WHERE DELHI'S AIR CAME FROM  (Slide 2 "Trace" block)
+    Back-trajectories run the wind backwards from Delhi: direction,
+    distance, share of paths crossing the stubble belt, fire power passed.
+    Say "traced forward from fires AND backward from Delhi".
+
+B1. LIKELY RANGE (UNCERTAINTY)  (Slide 2 or 4)
+    10-90% band around PM2.5. State it honestly: covered 76% of real values
+    on the held-out season (target 80%), slightly too narrow.
+
+B2. VALIDATION PAGE  (Slide 4)
+    Error by lead time, by station and by AQI category (category exactly
+    right 53%, within one category 94.5%), plus a live check against CAMS.
+
+B3. WHY-THIS-FORECAST  (Slide 2 "Explainable outputs")
+    You already have "Model-based contribution breakdown". Add that the
+    dashboard also shows what pushes each hour's forecast up or down.
+
+B4. OPEN DATA, HINDI, INSTALLABLE APP  (one line on Slide 5)
+    CSV download, API docs, Hindi/English switch, installs like an app.
+    Hindi is a beta - say so if you mention it.
+
+B5. SCALABILITY PROOF  (Slide 4)
+    "Add stations by editing one list; other Indo-Gangetic cities next."
+
+
+---------------------------------------------------------------------
+PART 3. SLIDE-BY-SLIDE CHECKLIST WITH TEXT YOU CAN PASTE
+---------------------------------------------------------------------
+
+SLIDE 1 - TITLE
+  Fix : fill Team ID.
+  OK  : problem ID, title, theme, category, team name.
+
+SLIDE 2 - PROPOSED SOLUTION
+  Keep: Forecast / Couple / Trace blocks, "Visible coupling",
+        "Explainable outputs", "What-if testing", "Inversion tracking",
+        72 hours / 20 locations / 4 pollutants.
+  Add (paste, shorten to fit):
+    - "PM2.5, PM10, NO2 and ozone, with a likely range"
+    - "GRAP stage forecast and health advisory (indicative)"
+    - "Smoke traced forward from fires and backward from Delhi"
+    - "Ozone and NOx view: afternoon ozone peak, night NO2 build-up
+       under the inversion lid"
+    - One dashboard screenshot.
+
+SLIDE 3 - TECHNICAL APPROACH
+  Fix : "polluant", "NASA Firms", check the diagram title.
+  Add : under Model Engine -> "10th/90th percentile models (likely range)"
+        and "back-trajectory engine".
+        Under API -> "Validation, CSV export and API docs".
+        A line: "Working prototype running on real open data" + QR/link.
+
+SLIDE 4 - FEASIBILITY AND VIABILITY
+  Keep: risks table and the Built / Simulated / Planned strip.
+  Add : results block (A3 above). Update "Built" to include:
+        "Forecast API, dashboard, plume + source-region engines, GRAP,
+         ozone/NOx, validation".
+
+SLIDE 5 - IMPACT AND BENEFITS
+  Fix : replace both "Screenshot" boxes, delete "risk hours.".
+  Add : "CAQM / CPCB / state pollution boards: GRAP-stage outlook and
+         scenario testing (what if fires double or winds drop)".
+        Benefits with no invented numbers - do NOT claim lives or money
+        saved; we have not measured them.
+
+SLIDE 6 - RESEARCH AND REFERENCES
+  Fix : update 39% -> "40-47% lower error than no change"; add visible
+        GitHub URL + QR; shorten text.
+  Add : GRAP / CAQM order (cite the official document once you find it);
+        Ke et al. 2017 (LightGBM); Lundberg and Lee 2017 (SHAP);
+        Stein et al. 2015 (HYSPLIT, for trajectories);
+        Wooster et al. 2005 (fire power to emissions).
+
+
+---------------------------------------------------------------------
+PART 4. SCREENSHOTS TO CAPTURE FOR THE DECK
+---------------------------------------------------------------------
+[ ] Hero page with the green "Couple" pill (Slide 1 or 2)
+[ ] Live dashboard: map with AQI surface and station dots (Slide 2)
+[ ] Inversion gauge + feedback card (Slide 3)
+[ ] GRAP card (Slide 5)
+[ ] Ozone and NOx card (Slide 5)
+[ ] Source-region paths on the "Stubble belt" map (Slide 2 or 5)
+[ ] Attribution chart + "Why this forecast?" (Slide 3)
+[ ] Replay of a real episode (Slide 4)
+[ ] "Check our work" lead-time chart (Slide 4)
+[ ] Optional: Hindi view, phone view
+
+
+---------------------------------------------------------------------
+PART 5. WORDING TO KEEP HONEST (judges will ask)
+---------------------------------------------------------------------
+  - It is a reduced-order coupled emulation, NOT a full WRF-Chem run.
+  - Ground truth is CAMS data, not CPCB station readings (first next step).
+  - The two-way feedback does not measurably improve replay accuracy
+    (17.6 coupled vs 17.5 uncoupled); its value is consistent physics and
+    what-if response.
+  - GRAP stages are indicative, not an official decision.
+  - Source-region view shows transport, not source apportionment.
+  - Peaks are still under-predicted on 2 of 5 replayed forecasts.
+  - PM10 is weak (R2 about 0.2 to 0.4).
+  - Stubble-season demo uses synthetic fires (live mode uses real FIRMS).
+
+
+---------------------------------------------------------------------
+PART 6. BEFORE YOU SUBMIT
+---------------------------------------------------------------------
+[ ] Push the latest code to GitHub (new modules are not there yet)
+[ ] Re-export the deck as PDF and check every slide after export
+[ ] Check the SIH portal template wording and slide limit yourself
+[ ] Rehearse the demo once with Wi-Fi off (offline cache)
+[ ] Test the dashboard on a real phone
+[ ] Have a Hindi speaker read the Hindi screens if you show them
+[ ] Check GRAP thresholds/actions against the current CAQM order
+[ ] Fill in team details everywhere they appear
+
+Related files in the project:
+  docs/SIH_WRITEUP.md   docs/DEMO_SCRIPT.md   docs/PPT_REVIEW.txt (this file)
+  Notion page: "AirCouple - SIH26082 ... (Approach, solution and deck content)"
+=====================================================================
+
+
+---------------------------------------------------------------------
+PART 7. EXTRA POINTS FOUND ON A SECOND PASS
+---------------------------------------------------------------------
+[ ] SLIDE 4 wording risk: "Uncalibrated feedback / Accuracy gain not
+    demonstrated" can be read as "the whole forecast has no accuracy gain".
+    Rewrite as: "Feedback term's own accuracy gain not demonstrated
+    (17.6 vs 17.5); the full model beats 'no change' by 40-47%."
+[ ] SPEAKER NOTES are empty on all 6 slides. Add 2-3 lines per slide for the
+    3-minute pitch (see docs/DEMO_SCRIPT.md).
+[ ] DENSITY: slides 2, 3 and 6 are very text-heavy in the preview. Check at
+    projector size; cut words or raise the font size.
+[ ] NAMING: use the dashboard's names in the deck (Health advisory, GRAP
+    stage forecast, Likely range, Source region) so deck and demo match.
+[ ] EXPORT: save as PDF and re-check every slide (fonts/icons can shift).
+[ ] The only pending project change: push the latest code to GitHub.
+
+
+---------------------------------------------------------------------
+PART 8. NEW MODULE: PLAIN-LANGUAGE BRIEFING + "ASK AIRCOUPLE" (optional LLM)
+---------------------------------------------------------------------
+STATUS (say it exactly like this):
+  - Built and tested: template briefing, Ask box, number guard, fallbacks,
+    API endpoints (14 automated tests, LLM API mocked), dashboard card.
+  - NOT yet tested: a live call to a real LLM (needs your API key in
+    backend/.env). Until then the card shows "Template summary".
+
+PARAGRAPH TO PASTE (shorten to fit):
+  "Plain-language AI briefing (optional). AirCouple adds an explanation
+  layer on top of the forecast: a short daily briefing and an 'Ask
+  AirCouple' box, in English and Hindi. A language model (any
+  OpenAI-compatible API, e.g. GLM) is used only to rephrase facts taken
+  from our forecast - it never produces forecast numbers. Every number in
+  its reply is checked against the forecast, and if the model invents
+  anything or the API is unavailable, a built-in template summary is shown
+  instead. All forecasts still come from the trained LightGBM models and
+  the coupling physics."
+
+WHERE TO ADD IT IN THE DECK:
+  SLIDE 2 (Proposed Solution) - "Output" block:
+      add bullet  "Plain-language briefing + Ask box (English/Hindi)".
+  SLIDE 3 (Technical Approach) - "API Delivery" box:
+      add line    "Optional LLM layer: explains only, numbers checked,
+                   template fallback".
+  SLIDE 4 (Feasibility) - risks table, add one row:
+      Risk     : "LLM may invent facts / API outage"
+      Strategy : "Every number checked against the forecast; template
+                  fallback; forecast numbers never come from the LLM".
+      Built/Simulated/Planned strip:
+        Built   -> add "Template briefing + Ask box"
+        Planned -> add "Live LLM connection (needs API key)"
+        (move it to Built only after you test with a real key)
+  SLIDE 5 (Impact) - Social benefit:
+      add  "Plain-language, Hindi-capable briefings for citizens and
+            officials".
+  SLIDE 6 (References):
+      only if you name GLM/another provider, add its API docs link.
+
+DO NOT SAY:
+  - that the LLM makes or improves the forecast (it does neither),
+  - that the live LLM call is tested (until you add a key and test it),
+  - that the Hindi is professionally verified (it is a beta).
+
+TO TURN ON A REAL LLM (later):
+  copy backend/.env.example to backend/.env, fill LLM_BASE_URL,
+  LLM_API_KEY, LLM_MODEL (exact model id from the provider's docs),
+  restart the backend. The badge changes to "AI-generated - <model>".
+  Never commit .env.

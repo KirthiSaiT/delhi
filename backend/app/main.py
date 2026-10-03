@@ -64,12 +64,9 @@ def get_forecast(scenario: str = "live", refresh: bool = False):
 WHATIF = {}           # rounded-params key -> (timestamp, payload)
 
 
-@app.get("/api/whatif")
-def whatif(fire_scale: float | None = None, wind_scale: float | None = None,
-           pbl_scale: float | None = None, start_pm25: float | None = None):
-    """Re-run the stubble-season scenario with custom fire load / wind / mixing depth / starting haze."""
+def _whatif_payload(P):
+    """Cached what-if run for already-cleaned parameters."""
     from . import forecast
-    P = forecast.clean_params(dict(fire_scale=fire_scale, wind_scale=wind_scale, pbl_scale=pbl_scale, start_pm25=start_pm25))
     key = tuple(round(v, 3) for v in P.values())
     hit = WHATIF.get(key)
     if hit and time.time() - hit[0] < TTL:
@@ -85,12 +82,88 @@ def whatif(fire_scale: float | None = None, wind_scale: float | None = None,
     return payload
 
 
+@app.get("/api/whatif")
+def whatif(fire_scale: float | None = None, wind_scale: float | None = None,
+           pbl_scale: float | None = None, start_pm25: float | None = None):
+    """Re-run the stubble-season scenario with custom fire load / wind / mixing depth / starting haze."""
+    from . import forecast
+    return _whatif_payload(forecast.clean_params(dict(fire_scale=fire_scale, wind_scale=wind_scale,
+                                                      pbl_scale=pbl_scale, start_pm25=start_pm25)))
+
+
 @app.get("/api/backtest")
 def backtest():
     f = CACHE / "backtest.json"
     if not f.exists():
         raise HTTPException(404, "backtest not generated yet (run: python -m app.backtest)")
     return json.loads(f.read_text())
+
+
+@app.get("/api/validation")
+def validation():
+    f = CACHE / "validation.json"
+    if not f.exists():
+        raise HTTPException(404, "validation not generated yet (run: python -m app.validation)")
+    return json.loads(f.read_text())
+
+
+@app.get("/api/verification")
+def verification_status():
+    from . import verification
+    return verification.evaluate()
+
+
+@app.get("/api/export.csv")
+def export_csv(scenario: str = "live"):
+    """Hourly station forecast as CSV (open data download)."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    payload = get_forecast(scenario)
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["time_ist", "station", "lat", "lon", "aqi", "pm25", "pm25_low", "pm25_high", "pm10", "no2", "o3",
+                "pbl_m", "temp_c", "wind_ms", "inversion_c", "stubble_pm25"])
+    for s in payload["stations"]:
+        for i, t in enumerate(payload["times"]):
+            w.writerow([t, s["name"], s["lat"], s["lon"], s["aqi"][i], s["pm25"][i], s["pm25_lo"][i], s["pm25_hi"][i],
+                        s["pm10"][i], s["no2"][i], s["o3"][i], s["pbl"][i], s["t2m"][i], s["ws"][i], s["inv"][i], s["stubble"][i]])
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f"attachment; filename=aircouple_{scenario}_forecast.csv"})
+
+
+@app.get("/api/llm")
+def llm_status():
+    from . import llm
+    return llm.status()
+
+
+def _payload_for(scenario, fire_scale, wind_scale, pbl_scale, start_pm25):
+    """The forecast the user is looking at: the cached live/peak run, or a custom what-if run when sliders were moved."""
+    from . import forecast
+    custom = [v for v in (fire_scale, wind_scale, pbl_scale, start_pm25) if v is not None]
+    if scenario == "peak" and custom:
+        P = forecast.clean_params(dict(fire_scale=fire_scale, wind_scale=wind_scale, pbl_scale=pbl_scale, start_pm25=start_pm25))
+        if P != forecast.DEFAULTS:
+            return _whatif_payload(P)
+    return get_forecast(scenario)
+
+
+@app.get("/api/briefing")
+def briefing_endpoint(scenario: str = "live", lang: str = "en", fire_scale: float | None = None,
+                      wind_scale: float | None = None, pbl_scale: float | None = None, start_pm25: float | None = None):
+    """Plain-language outlook. Uses an LLM only if configured; numbers always come from the forecast."""
+    from . import llm
+    return llm.briefing(_payload_for(scenario, fire_scale, wind_scale, pbl_scale, start_pm25), "hi" if lang == "hi" else "en")
+
+
+@app.get("/api/ask")
+def ask_endpoint(q: str, scenario: str = "live", lang: str = "en", fire_scale: float | None = None,
+                 wind_scale: float | None = None, pbl_scale: float | None = None, start_pm25: float | None = None):
+    from . import llm
+    if not q.strip() or len(q) > 300:
+        raise HTTPException(400, "question must be 1-300 characters")
+    return llm.ask(_payload_for(scenario, fire_scale, wind_scale, pbl_scale, start_pm25), q, "hi" if lang == "hi" else "en")
 
 
 DIST = ROOT.parent / "frontend" / "dist"

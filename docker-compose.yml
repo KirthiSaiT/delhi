@@ -1,0 +1,8 @@
+services:
+  aircouple:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/cache:/app/backend/cache     # keeps forecasts and the live-verification log between restarts
+    restart: unless-stopped

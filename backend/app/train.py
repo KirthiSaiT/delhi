@@ -83,7 +83,9 @@ def main():
     print("rows", len(X), "train", int(train_mask.sum()), "eval", int(eval_mask.sum()), flush=True)
 
     models = model.fit(X, Y, train_mask)
-    pred = {k: np.clip(np.expm1(m.predict(X[eval_mask])), 0, None) for k, m in models.items()}
+    Xe = X[eval_mask]
+    pred = model.predict_flat(models, Xe)
+    joblib.dump(models, MODELS / "models_holdout.joblib")
     hcol = X[eval_mask][:, 0]
     persist_col = {"pm25": "pm2_5_0", "pm10": "pm10_0", "o3": "ozone_0", "no2": "nitrogen_dioxide_0"}
     metrics = {}

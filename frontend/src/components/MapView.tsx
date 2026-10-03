@@ -9,7 +9,7 @@ maplibregl.setWorkerUrl(`${location.origin}/maplibre/maplibre-gl-worker.mjs`)
 
 export type Basemap = "light" | "osm"
 export type Region = "ncr" | "belt"
-export interface Layers { grid: boolean; fires: boolean; plume: boolean }
+export interface Layers { grid: boolean; fires: boolean; plume: boolean; source: boolean }
 
 const VIEWS: Record<Region, { center: [number, number]; zoom: number }> = {
   ncr: { center: [77.2, 28.62], zoom: 8.9 },
@@ -36,7 +36,7 @@ export default function MapView({ data, hour, basemap, region, layers, selected,
 }) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
-  const markers = useRef<Record<string, HTMLDivElement>>({})
+  const markers = useRef<Record<string, { holder: HTMLDivElement; dot: HTMLDivElement }>>({})
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -63,6 +63,11 @@ export default function MapView({ data, hour, basemap, region, layers, selected,
       m.addLayer({ id: "plume", type: "circle", source: "plume", paint: {
         "circle-color": ["interpolate", ["linear"], ["get", "age"], 0, "#e5432d", 24, "#8c1d40", 60, "#5b3a8c"],
         "circle-radius": 3.2, "circle-opacity": 0.55, "circle-blur": 0.4 } })
+      m.addSource("back", { type: "geojson", data: { type: "FeatureCollection", features: [] } })
+      m.addLayer({ id: "back", type: "line", source: "back", layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#534ab7", "line-width": 1.8, "line-opacity": 0.5 } })
+      m.addLayer({ id: "back-end", type: "circle", source: "back", filter: ["==", ["get", "kind"], "end"],
+        paint: { "circle-color": "#534ab7", "circle-radius": 2.6, "circle-opacity": 0.8 } })
       setReady(true)
     })
     map.current = m
@@ -79,6 +84,8 @@ export default function MapView({ data, hour, basemap, region, layers, selected,
     m.setLayoutProperty("grid", "visibility", layers.grid ? "visible" : "none")
     m.setLayoutProperty("fires", "visibility", layers.fires ? "visible" : "none")
     m.setLayoutProperty("plume", "visibility", layers.plume ? "visible" : "none")
+    m.setLayoutProperty("back", "visibility", layers.source ? "visible" : "none")
+    m.setLayoutProperty("back-end", "visibility", layers.source ? "visible" : "none")
   }, [basemap, layers, ready])
 
   useEffect(() => { map.current?.flyTo({ ...VIEWS[region], duration: 900 }) }, [region])
@@ -101,25 +108,43 @@ export default function MapView({ data, hour, basemap, region, layers, selected,
     ;(m.getSource("plume") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as any)
   }, [data, hour, ready])
 
+  // source region: back-trajectories for the arrival bucket nearest the chosen hour
+  useEffect(() => {
+    const m = map.current; if (!m || !ready || !data.back) return
+    const a = data.back.arrivals[Math.min(Math.round(hour / 6), data.back.arrivals.length - 1)]
+    const feats: any[] = []
+    for (const path of a.paths) {
+      feats.push({ type: "Feature", properties: { kind: "path" }, geometry: { type: "LineString", coordinates: path } })
+      feats.push({ type: "Feature", properties: { kind: "end" }, geometry: { type: "Point", coordinates: path[path.length - 1] } })
+    }
+    ;(m.getSource("back") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: feats } as any)
+  }, [data, hour, ready])
+
   // station markers
   useEffect(() => {
     const m = map.current; if (!m || !ready) return
     for (const s of data.stations) {
-      let el = markers.current[s.name]
-      if (!el) {
-        el = document.createElement("div")
-        el.style.cssText = "width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font:600 11px Inter,sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer;transition:transform .15s"
-        el.title = s.name
-        el.onclick = (e) => { e.stopPropagation(); onSelect(s.name) }
-        new maplibregl.Marker({ element: el }).setLngLat([s.lon, s.lat]).addTo(m)
-        markers.current[s.name] = el
+      let mk = markers.current[s.name]
+      if (!mk) {
+        // MapLibre positions the outer element with its own `transform`, so never touch that one:
+        // all styling (including the selected-state scale) goes on an inner dot.
+        const holder = document.createElement("div")
+        holder.style.cssText = "width:30px;height:30px;cursor:pointer"
+        const dot = document.createElement("div")
+        dot.style.cssText = "width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font:600 11px Inter,sans-serif;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);box-sizing:border-box;transition:transform .15s"
+        holder.title = s.name
+        holder.onclick = (e) => { e.stopPropagation(); onSelect(s.name) }
+        holder.appendChild(dot)
+        new maplibregl.Marker({ element: holder }).setLngLat([s.lon, s.lat]).addTo(m)
+        mk = markers.current[s.name] = { holder, dot }
       }
       const v = Math.round(s.aqi[hour])
-      el.style.display = region === "belt" ? "none" : "flex"
-      el.textContent = String(v)
-      el.style.background = aqiColor(v)
-      el.style.transform = selected === s.name ? "scale(1.3)" : "scale(1)"
-      el.style.zIndex = selected === s.name ? "5" : "1"
+      const on = selected === s.name
+      mk.holder.style.display = region === "belt" ? "none" : "block"
+      mk.holder.style.zIndex = on ? "5" : "1"
+      mk.dot.textContent = String(v)
+      mk.dot.style.background = aqiColor(v)
+      mk.dot.style.transform = on ? "scale(1.3)" : "scale(1)"
     }
   }, [data, hour, selected, ready, onSelect, region])
 

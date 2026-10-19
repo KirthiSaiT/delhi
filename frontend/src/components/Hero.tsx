@@ -1,47 +1,127 @@
-import { useEffect, useState } from "react"
-import { X } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { useT } from "@/lib/i18n"
+import { useState } from "react"
+import { X, Plane, ArrowRight } from "lucide-react"
 
-export default function Hero({ onLive, onWhatIf }: { onLive: () => void; onWhatIf: () => void }) {
-  const { t } = useT()
-  const [tip, setTip] = useState(true)
-  useEffect(() => {
-    try { if (localStorage.getItem("aircouple.skipIntro")) onLive() } catch { /* storage unavailable */ }
-  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
-  const always = () => {
-    try { localStorage.setItem("aircouple.skipIntro", "1") } catch { /* storage unavailable */ }
-    setTip(false)
-    onLive()
+interface Props {
+  onOpenApp: () => void
+  onOpenWhatIf: () => void
+}
+
+export function Hero({ onOpenApp, onOpenWhatIf }: Props) {
+  const [showTip, setShowTip] = useState(true)
+
+  const handleAlwaysOpen = () => {
+    try {
+      localStorage.setItem("vayurakshak.skipIntro", "1")
+    } catch {}
+    setShowTip(false)
+    onOpenApp()
   }
+
   return (
-    <section id="top" className="relative mx-auto max-w-[1200px] px-4 pb-14 pt-14 text-center sm:pt-20 lg:pt-24">
-      {tip && (
-        <Card className="absolute right-4 top-2 z-10 hidden w-[250px] gap-1.5 rounded-xl p-3 text-left shadow-lg lg:flex">
-          <div className="flex items-start justify-between gap-2 text-sm">
-            <span>{t("Skip this page next time?")}</span>
-            <Button variant="ghost" size="icon-xs" aria-label="Dismiss" onClick={() => setTip(false)}><X /></Button>
+    <section id="top" className="relative mx-auto max-w-[1280px] px-4 pb-12 pt-16 text-center sm:pt-20 lg:pt-24">
+      {/* Top-Right Notion Floating Card */}
+      {showTip && (
+        <div className="absolute right-4 top-6 z-20 hidden w-[280px] flex-col gap-2 rounded-xl border border-[#e9e9e7] bg-white p-4 text-left shadow-lg lg:flex">
+          <div className="flex items-start justify-between gap-2 text-base text-[#37352f]">
+            <span>Skip this page next time?</span>
+            <button
+              onClick={() => setShowTip(false)}
+              className="text-slate-400 hover:text-slate-700"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <Button variant="link" className="h-auto justify-start p-0 text-sm" onClick={always}>{t("Always open dashboard →")}</Button>
-        </Card>
+          <button
+            onClick={handleAlwaysOpen}
+            className="flex items-center gap-1.5 text-base font-medium text-[#0075de] hover:underline text-left p-0"
+          >
+            Always open dashboard <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       )}
-      <h1 className="hero-title text-[44px] sm:text-[72px] lg:text-[96px]">
-        {t("Where air and weather")}
-        <br />
-        <Badge className="h-auto gap-[0.28em] rounded-full bg-[#d3f0dc] px-[0.32em] py-[0.02em] align-[0.04em] text-[length:inherit] font-normal tracking-[-0.03em] text-foreground">
-          <span className="size-[0.3em] rounded-full bg-[#1aae39]" />{t("Couple")}
-        </Badge>{" "}{t("together.")}
+
+      {/* Main Notion Display Title */}
+      <h1 className="hero-title mx-auto max-w-5xl text-[48px] sm:text-[72px] lg:text-[96px] text-[#191919] tracking-tight">
+        Where air fleet and{" "}
+        <span className="inline-flex items-center gap-3 rounded-full bg-[#e8f3fc] px-5 py-1.5 align-baseline text-[length:inherit] font-normal text-[#191919]">
+          <span className="size-4 sm:size-5 rounded-full bg-[#0075de]" />
+          Think
+        </span>{" "}
+        together.
       </h1>
-      <p className="mx-auto mt-6 max-w-2xl text-base text-foreground/80 sm:text-lg">
-        {t("A 72-hour forecast for Delhi NCR that lets aerosols and meteorology feed back on each other — track inversions, trace stubble plumes, and see the haze coming.")}
+
+      {/* Subtitle */}
+      <p className="mx-auto mt-8 max-w-2xl text-lg text-[#37352f]/80 sm:text-xl leading-relaxed">
+        Capture telemetry, predict component failures, and automate depot logistics with defense AI built for the Indian Air Force.
       </p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Button className="h-11 px-5 text-[15px]" onClick={onLive}>{t("Open live dashboard")}</Button>
-        <Button variant="secondary" className="h-11 bg-accent px-5 text-[15px] text-accent-foreground hover:bg-accent/70" onClick={onWhatIf}>
-          {t("Try the stubble-season what-if")}
-        </Button>
+
+      {/* Action Buttons */}
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <button
+          onClick={onOpenApp}
+          className="h-12 px-8 rounded-lg bg-[#0075de] hover:bg-[#0060b9] text-white font-medium text-base shadow-sm transition-all"
+        >
+          Open Fleet Command
+        </button>
+        <button
+          onClick={onOpenWhatIf}
+          className="h-12 px-8 rounded-lg bg-[#f1f1ef] hover:bg-[#e6e6e3] text-[#37352f] font-medium text-base transition-all"
+        >
+          Try Stress What-If
+        </button>
+      </div>
+
+      {/* Hand-Drawn Notion Character Peeking Graphic */}
+      <div className="relative mx-auto max-w-[1280px] mt-16 flex justify-end pr-10 sm:pr-16 -mb-4 pointer-events-none">
+        <svg
+          className="w-28 h-28 sm:w-32 sm:h-32 text-black"
+          viewBox="0 0 120 120"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Notion Hand-drawn face illustration */}
+          <path
+            d="M20 110 C 20 60, 30 20, 70 20 C 105 20, 115 55, 115 110"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          {/* Eyebrows */}
+          <path d="M42 42 C 48 38, 56 40, 58 44" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M78 40 C 82 37, 90 39, 94 43" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+          {/* Eyes */}
+          <circle cx="52" cy="52" r="5" fill="currentColor" />
+          <circle cx="86" cy="50" r="5" fill="currentColor" />
+          {/* Nose */}
+          <path d="M68 50 L 64 68 L 74 68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Smirk Smile */}
+          <path d="M60 84 C 70 90, 84 86, 90 78" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+          {/* Hand resting on the border */}
+          <path d="M15 110 C 15 102, 28 102, 28 110" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Trust Ticker / Agency Badges */}
+      <div className="pt-8 border-b border-[#e9e9e7] pb-14">
+        <p className="text-sm font-medium text-[#787774] uppercase tracking-wider mb-6">
+          Trusted by Indian Defence & Aeronautical Formations
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-base font-semibold text-[#37352f]/70">
+          <span className="flex items-center gap-2"><Plane className="w-5 h-5 text-[#0075de]" /> Indian Air Force</span>
+          <span className="hidden sm:inline">·</span>
+          <span>DSSC Wellington</span>
+          <span className="hidden sm:inline">·</span>
+          <span>11 BRD (Ojhar)</span>
+          <span className="hidden sm:inline">·</span>
+          <span>3 BRD (Chandigarh)</span>
+          <span className="hidden sm:inline">·</span>
+          <span>HAL</span>
+          <span className="hidden sm:inline">·</span>
+          <span>DRDO / ADA</span>
+          <span className="hidden sm:inline">·</span>
+          <span>Ministry of Defence</span>
+        </div>
       </div>
     </section>
   )

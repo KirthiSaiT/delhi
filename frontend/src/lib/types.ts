@@ -1,32 +1,201 @@
-export interface Station {
-  name: string; lat: number; lon: number; delhi: boolean
-  pm25: number[]; pm25_unc: number[]; pm25_cams: number[]; pm25_lo: number[]; pm25_hi: number[]; pm10: number[]; no2: number[]; o3: number[]
-  pbl: number[]; pbl_nwp: number[]; t2m: number[]; t2m_nwp: number[]; inv: number[]; ws: number[]
-  vent: number[]; stubble: number[]; aqi: number[]; aqi_unc: number[]; dom: number[]; wd: number[]
+// VayuRakshak TypeScript Type Definitions
+
+export interface AircraftSummary {
+  tail_number: string
+  type: string
+  squadron: string
+  base: string
+  total_flight_hours: number
+  total_cycles: number
+  status: "FMC" | "PMC" | "AOG"
+  target_rul_hours: number
+  fatigue_index: number
+  last_overhaul: string
+  base_name: string
+  base_code: string
+  base_coords: { lat: number; lon: number }
+  model_name: string
+  engine_type: string
+  role: string
+  max_g: number
+  propulsion_health: number
+  hydraulics_health: number
+  avionics_health: number
+  airframe_health: number
+  overall_health: number
 }
-export type Series = number[]
-export interface Grap { stage: number[]; thresholds: number[]; first_hour: Record<string, number | null>; max_stage: number; hours_in_stage: Record<string, number>; basis: string }
-export interface OzoneDay { date: string; o3_peak: number; o3_peak_hour: number; no2_peak: number; no2_peak_hour: number; o3_8h_max: number }
-export interface Ozone { o3_8h: number[]; no2_24h: number[]; daily: OzoneDay[]; hours_o3_8h_above_100: number; hours_no2_24h_above_80: number; no2_night_to_day: number | null; no2_vs_trapping_corr: number; standards: { o3_8h: number; no2_24h: number } }
-export interface Drivers { groups: string[]; pct: number[][]; baseline_pm25: number; note: string }
-export interface BackArrival { hour: number; dir_from: string; dist_km_24h: number; belt_pct: number; exposure_mw: number; exposure_share_pct: number; paths: number[][][] }
-export interface Back { delhi: [number, number]; step_h: number; arrivals: BackArrival[] }
-export interface Uncertainty { available: boolean; band: string; target_coverage: number; holdout_coverage: Record<string, number> | null; note: string }
-export interface WhatIfParams { fire_scale: number; wind_scale: number; pbl_scale: number; start_pm25: number }
-export interface Attribution { background: number[]; stubble: number[]; feedback: number[]; share: { background: number; stubble: number; feedback: number } }
-export interface Metric { mae: number; persistence_mae: number; improvement_pct: number; r2: number }
-export interface Forecast {
-  scenario: "live" | "peak"; has_cams: boolean; scenario_label: string; generated: string; offline: boolean; refreshing?: boolean
-  t0: string; times: string[]
-  delhi: Record<string, Series>; delhi_wd: Series
-  inversion: { classes: number[]; names: string[]; hours_moderate_or_strong: number; max_c: number; max_hour: number; min_pbl_m: number; min_vent: number }
-  dominant: string
-  attribution: Attribution; params: WhatIfParams | null
-  grap: Grap; ozone: Ozone; drivers: Drivers; back: Back; uncertainty: Uncertainty
-  feedback: { iterations: number; residual_ugm3: number[]; pm25_uplift_mean: number; pm25_uplift_max: number; pm25_uplift_hour: number
-    day_cooling_c: number; pbl_reduction_pct: number; inversion_delta_c: number; aod_peak: number; k_aod: number }
-  plume: { frames: number[][]; fires: number[][]; summary: { n_fires: number; total_frp: number; arrival_h: number | null; peak_h: number | null; peak_ugm3: number } }
-  stations: Station[]
-  grid: { lats: number[]; lons: number[]; step: number; aqi: number[][] }
-  meta: { k_aod: number; metrics: Record<string, Record<string, Metric>>; trained_on: string; holdout: string; caveat: string }
+
+export interface FleetSummary {
+  total_aircraft: number
+  fmc_count: number
+  pmc_count: number
+  aog_count: number
+  mc_rate_pct: number
+  fmc_rate_pct: number
+  target_mc_rate_pct: number
+  average_rul_hours: number
+  average_fleet_health: number
+  average_fatigue_index: number
+  critical_alerts: Array<{
+    tail_number: string
+    severity: "CRITICAL" | "WARNING" | "INFO"
+    title: string
+    reason: string
+  }>
+}
+
+export interface AOGHazardAlert {
+  tail_number: string
+  aircraft_type: string
+  status: string
+  rul_hours: number
+  part_needed: string
+  nsn_code: string
+  depot: string
+  depot_lead_time_hours: number
+  deficit_aog_hours: number
+  existing_order: boolean
+  urgency: "CRITICAL_AOG_PREVENT" | "WARNING_PREORDER"
+}
+
+export interface TelemetryFrame {
+  step: number
+  time_sec: number
+  flight_phase: string
+  altitude_ft: number
+  mach: number
+  throttle_pct: number
+  egt_c: number
+  egt_margin_c: number
+  vib_fan_rms: number
+  vib_core_rms: number
+  hyd_press_psi: number
+  oil_press_psi: number
+  oil_temp_c: number
+  g_load: number
+  fan_rpm_pct: number
+  core_rpm_pct: number
+  bus_error_rate: number
+}
+
+export interface SubsystemComponent {
+  name: string
+  wear_pct?: number
+  efficiency_pct?: number
+  bit_status?: string
+  crack_inspection?: string
+}
+
+export interface Subsystem3D {
+  name: string
+  position: [number, number, number]
+  health_pct: number
+  temperature_c?: number
+  vibration_rms?: number
+  pressure_psi?: number
+  fluid_temp_c?: number
+  bus_error_rate?: number
+  fatigue_index?: number
+  max_g_recorded?: number
+  status: "NORMAL" | "WARNING" | "CRITICAL"
+  components: SubsystemComponent[]
+}
+
+export interface DigitalTwinResponse {
+  tail_number: string
+  model_name: string
+  overall_health_pct: number
+  subsystems: {
+    turbofan_engine_left: Subsystem3D
+    turbofan_engine_right: Subsystem3D
+    flight_controls_hydraulics: Subsystem3D
+    mission_avionics_radar: Subsystem3D
+    airframe_structure: Subsystem3D
+  }
+  last_telemetry: TelemetryFrame
+}
+
+export interface TrajectoryPoint {
+  cycle: number
+  is_historical: boolean
+  predicted_rul_hours: number
+  confidence_lower: number
+  confidence_upper: number
+}
+
+export interface SHAPDriver {
+  feature: string
+  sensor_code: string
+  value: string
+  impact: string
+  contribution_pct: number
+  explanation: string
+}
+
+export interface PredictionDossier {
+  tail_number: string
+  aircraft_type: string
+  predicted_rul_hours: number
+  confidence_lower_10pct: number
+  confidence_upper_90pct: number
+  risk_level: "NOMINAL" | "ELEVATED" | "HIGH_WATCH" | "CRITICAL_AOG"
+  action_code: string
+  action_recommendation: string
+  egt_margin_c: number
+  vib_core_rms: number
+  trajectory: TrajectoryPoint[]
+  shap_drivers: SHAPDriver[]
+}
+
+export interface SparesItem {
+  part_name: string
+  nsn_code: string
+  subsystem: string
+  applicable_aircraft: string[]
+  stock_level: number
+  primary_depot: string
+  unit_cost_inr_lakhs: number
+  lead_time_hours: number
+  criticality: string
+}
+
+export interface WorkOrder {
+  wo_id: string
+  tail_number: string
+  priority: string
+  status: string
+  part_needed: string
+  part_name: string
+  depot: string
+  destination_base: string
+  eta_hours: number
+  initiated_at: string
+  auth_officer: string
+}
+
+export interface MissionEvaluatedAircraft {
+  tail_number: string
+  model_name: string
+  squadron: string
+  base_name: string
+  status: string
+  rul_hours: number
+  fatigue_index: number
+  overall_health: number
+  propulsion_health: number
+  hydraulics_health: number
+  avionics_health: number
+  suitability_score: number
+  is_eligible: boolean
+  rejection_reason: string
+  dispatch_recommendation: string
+}
+
+export interface MissionDispatchResponse {
+  mission_type: string
+  mission_name: string
+  description: string
+  urgency_level: string
+  required_g_envelope: number
+  evaluated_aircraft: MissionEvaluatedAircraft[]
 }

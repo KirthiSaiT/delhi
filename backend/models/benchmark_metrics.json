@@ -1,0 +1,37 @@
+{
+  "dataset": "NASA C-MAPSS (FD001 Turbofan Run-to-Failure)",
+  "test_engines_count": 30,
+  "test_cycles_evaluated": 7693,
+  "mae_cycles": 9.13,
+  "rmse_cycles": 13.2,
+  "r2_score": 0.893,
+  "nasa_phm_score": 22692.15,
+  "uncertainty_band_coverage_pct": 91.4,
+  "lead_time_performance": [
+    {
+      "range": "0-25 cycles",
+      "sample_count": 750,
+      "mae": 3.86,
+      "rmse": 5.46
+    },
+    {
+      "range": "25-50 cycles",
+      "sample_count": 750,
+      "mae": 10.19,
+      "rmse": 13.47
+    },
+    {
+      "range": "50-75 cycles",
+      "sample_count": 750,
+      "mae": 15.99,
+      "rmse": 19.64
+    },
+    {
+      "range": "75-125 cycles",
+      "sample_count": 1500,
+      "mae": 15.96,
+      "rmse": 19.08
+    }
+  ],
+  "early_fault_detection_horizon": "45\u201360 cycles before critical failure"
+}

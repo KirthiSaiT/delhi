@@ -5,4 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/cache:/app/backend/cache     # keeps forecasts and the live-verification log between restarts
+    env_file:
+      - path: ./backend/.env                   # optional: LLM_BASE_URL / LLM_API_KEY / LLM_MODEL are read at run time
+        required: false
     restart: unless-stopped

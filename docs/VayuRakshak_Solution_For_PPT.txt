@@ -1,0 +1,658 @@
+================================================================================
+PROJECT VAYURAKSHAK (AEROTWIN-AI)
+Air Power Predictive Maintenance & Fleet Availability Platform
+
+Technical Solution Overview - PPT / Submission Notes
+SIH 2026 | Problem Statement 26249 | Ministry of Defence (DSSC)
+================================================================================
+
+PURPOSE OF THIS FILE
+--------------------
+This is a plain-text, copy-paste-friendly explanation of what was built, which
+software and models were used, how the system works, and what the current
+prototype proves. The last section gives a slide-by-slide PPT plan.
+
+Important: this file separates what is IMPLEMENTED from what is PLANNED. Use the
+"Claim boundary" notes so the presentation stays accurate.
+
+
+================================================================================
+1. ONE-PARAGRAPH SUMMARY
+================================================================================
+VayuRakshak (AeroTwin-AI) is a sovereign, air-gapped maintenance decision
+platform for military aircraft. It combines physics-based degradation indicators,
+gradient-boosted Remaining Useful Life (RUL) prediction, a 3D digital twin,
+depot/spares logic, and mission-fit dispatch in one web console. The system is
+designed to predict component failure early enough to pre-position the right
+spare, inspect the right subsystem, and assign the right airframe before an
+Aircraft On Ground (AOG) event occurs.
+
+
+================================================================================
+2. WHAT THE PLATFORM DOES
+================================================================================
+The working prototype has seven console tabs plus a work-order requisition modal.
+
+2.1 Fleet Command
+    - Shows MC / FMC / PMC / AOG counts and rates.
+    - Filters by airbase and aircraft status.
+    - Surfaces critical AOG and PMC alerts.
+    - Shows per-aircraft health bars and remaining life.
+
+2.2 3D Digital Twin
+    - Three.js WebGL model of the fighter airframe.
+    - Exploded subsystem view and thermal/stress heatmap mode.
+    - Subsystem inspector for engines, hydraulics, avionics/radar and airframe.
+    - Live EGT, vibration, hydraulic pressure and wear readouts.
+
+2.3 Predictive AI (RUL)
+    - Point RUL estimate in flight hours.
+    - 10th and 90th percentile confidence bounds.
+    - Degradation trajectory and AOG redline.
+    - SHAP-style sensor attribution (T50, P30, core vibration, bypass ratio).
+    - Action recommendation and risk category.
+
+2.4 Depot & Spares
+    - IMMOLS-style spares catalog with NSN codes.
+    - e-MMS-style work orders with priority, depot, ETA and authorizing officer.
+    - Lead-time-vs-RUL deficit alerts: if part lead time > remaining life, raise
+      an AOG-prevention alert.
+    - Requisition modal that creates a new work order.
+
+2.5 Anti-Cannibalization Matrix
+    - Evaluates donor airframes of the same type.
+    - Scores donor feasibility by status, same-base availability, swap time and
+      depot replenishment time.
+    - Flags whether borrowing a part would ground an active FMC aircraft.
+
+2.6 Mission Dispatch
+    - Mission profiles: QRA Scramble, Combat Air Patrol, Deep Penetration
+      Strike, Tactical Recon / Ferry.
+    - Each profile has gates for status, RUL, fatigue index and subsystem health.
+    - Ranks eligible aircraft and labels priority allocation / reserve /
+      not recommended.
+
+2.7 Raksha-Mitra Assistant
+    - Air-gapped IETM/SOP retrieval for four fault families:
+      EGT overheat, core vibration, hydraulic pressure decay, MIL-STD-1553 bus
+      parity errors.
+    - Returns fault code, severity, step-by-step SOP, required tools and TAT.
+    - This is deterministic keyword/fault-code matching over a curated knowledge
+      base. It is not a cloud LLM.
+
+2.8 Validation & What-If
+    - Displays NASA C-MAPSS-style benchmark metrics.
+    - What-if simulator for combat afterburner overheat, desert dust ingestion
+      and high-G dogfight scenarios.
+    - Fleet CSV export.
+
+
+================================================================================
+3. SYSTEM ARCHITECTURE
+================================================================================
+Text view:
+
+  [ React 19 SPA ]
+  Fleet Command | 3D Twin | Predictive AI | Depot | Dispatch | Assistant |
+  Validation & What-If
+          |
+          |  REST / JSON over /api
+          v
+  [ FastAPI + Uvicorn ]
+  Fleet API | Telemetry API | Digital Twin API | Prediction API |
+  Logistics API | Dispatch API | Assistant API | Benchmark API | Export
+          |
+          |  Python engine calls
+          v
+  [ Intelligence Layer ]
+  RUL predictor (scikit-learn HistGradientBoosting)
+  Physics engine (EGT margin, HPC efficiency, vibration, fatigue)
+  Risk classifier | SHAP-style attribution | Dispatch scoring |
+  Cannibalization scoring | IETM retrieval
+          |
+          |  reads / simulates
+          v
+  [ Data Layer ]
+  Fleet registry | Telemetry simulator | C-MAPSS-profile generator |
+  Spares catalog | Work orders | IETM knowledge base | Mission profiles
+          |
+          |  modeled interfaces
+          v
+  [ External / IAF Interfaces - simulated in this build ]
+  e-MMS | IMMOLS | 3 BRD / 11 BRD / 7 BRD | MIL-STD-1553B | ARINC-429
+
+Deployment shape:
+  - Frontend is a Vite-built React SPA.
+  - FastAPI serves the API and can also serve the built SPA from frontend/dist.
+  - The Windows launcher start.bat trains missing models, builds the UI if
+    needed, and starts Uvicorn on port 8000.
+  - In development, Vite proxies /api, /docs and /openapi.json to port 8000.
+
+
+================================================================================
+4. SOFTWARE STACK
+================================================================================
+4.1 Frontend
+    - React 19.2.8
+    - TypeScript ~6.0.2
+    - Vite 8.3
+    - Tailwind CSS 4.3.3
+    - Three.js 0.186.1 (WebGL digital twin)
+    - Recharts 3.8 (RUL and health charts)
+    - MapLibre GL 6.11.2 (map layers)
+    - Lucide React 1.49 (icons)
+    - Base UI 1.8 / shadcn 4.21 (UI primitives)
+    - Inter variable font
+
+4.2 Backend
+    - Python 3.x
+    - FastAPI (application API version 2.0.0)
+    - Uvicorn ASGI server
+    - Pydantic request models
+    - pandas and NumPy for data/math
+    - scikit-learn for gradient-boosted models
+    - joblib for model serialization
+    - pytest + FastAPI TestClient for backend tests
+
+4.3 Machine learning
+    - scikit-learn HistGradientBoostingRegressor
+    - Point-estimate model + two quantile models (q10 / q90)
+    - Target: Remaining Useful Life in cycles, clipped at 125 cycles
+    - Features: 3 operational settings + 21 C-MAPSS sensor channels = 24
+    - Artifacts: rul_lgbm.joblib, rul_q10.joblib, rul_q90.joblib
+    - Benchmark report: benchmark_metrics.json
+
+4.4 Delivery / operations
+    - Windows one-command launcher: start.bat
+    - Local/air-gapped execution
+    - No cloud ML service, no external LLM, no paid API
+    - CSV export of fleet readiness
+    - Vite production build in frontend/dist
+
+
+================================================================================
+5. MACHINE-LEARNING MODEL - DETAILED
+================================================================================
+5.1 Problem type
+    Supervised regression: predict Remaining Useful Life (RUL) from current
+    engine/airframe sensor state.
+
+5.2 Data
+    - The training script uses a deterministic, high-fidelity synthetic
+      NASA C-MAPSS FD001-profile generator.
+    - 120 engines, seed 42.
+    - Each engine follows a run-to-failure trajectory:
+      healthy plateau, then Weibull/exponential wear in HPC/HPT temperature,
+      pressure and bypass ratio until failure at RUL = 0.
+    - Each row contains 3 operational settings and 21 sensor channels.
+    - This lets the demo run offline and reproducibly. It is NOT the recorded
+      NASA FD001 file set. A real FD001 loader is a roadmap item.
+
+5.3 Target
+    - RUL is clipped at 125 cycles (standard piecewise upper limit).
+    - This focuses learning on the degradation zone instead of the long healthy
+      plateau.
+
+5.4 Train/test split
+    - Split by engine unit, not by cycle, to prevent leakage.
+    - 75% / 25% split.
+    - 120 engines -> 90 training engines, 30 held-out test engines.
+    - 7,693 test cycles evaluated.
+
+5.5 Models
+    - Point estimate:
+      HistGradientBoostingRegressor
+      max_iter=150, learning_rate=0.08, max_depth=7, random_state=42
+    - Lower bound:
+      HistGradientBoostingRegressor
+      loss="quantile", quantile=0.10,
+      max_iter=100, learning_rate=0.08, max_depth=6, random_state=42
+    - Upper bound:
+      HistGradientBoostingRegressor
+      loss="quantile", quantile=0.90,
+      max_iter=100, learning_rate=0.08, max_depth=6, random_state=42
+
+5.6 Inference output
+    - Point RUL in cycles.
+    - q10 and q90 RUL bounds.
+    - Conversion to flight hours: cycles x 1.4 h/cycle.
+    - Risk tiers based on predicted hours:
+        <= 15 h or AOG status  -> CRITICAL_AOG / ground immediately
+        <= 45 h or PMC status  -> HIGH_WATCH / restrict combat, pre-order spares
+        <= 80 h                -> ELEVATED / monitor trend
+        > 80 h                 -> NOMINAL / cleared
+    - Degradation trajectory for the chart.
+    - SHAP-style feature attribution for root-cause explanation.
+
+5.7 Validation metrics (benchmark_metrics.json)
+    - Test MAE: 9.13 cycles
+    - Test RMSE: 13.20 cycles
+    - R-squared: 0.893
+    - 10th-90th percentile band coverage: 91.4%
+    - NASA PHM score: 22,692.15
+    - Held-out test engines: 30
+    - Held-out test cycles: 7,693
+
+    MAE by remaining-life window:
+      0-25 cycles:   3.86 cycles
+      25-50 cycles: 10.19 cycles
+      50-75 cycles: 15.99 cycles
+      75-125 cycles: 15.96 cycles
+
+    Note: the validation console's lead-time cards currently show an older
+    hardcoded run (4.12 / 6.78 / 8.95 / 12.10). The benchmark JSON values above
+    are the source of truth. Refresh those cards before the final demo if the
+    numbers must match exactly.
+
+5.8 Explainability
+    - The console shows contributions for:
+        T50 / sensor s4 (turbine outlet EGT)
+        P30 / sensor s7 (HPC outlet pressure)
+        core vibration
+        bypass ratio / sensor s15
+    - This is a deterministic, SHAP-style engineering attribution model, not a
+      call to the SHAP library. Say "SHAP-style" in the presentation, not
+      "SHAP values from the SHAP package".
+
+5.9 Fallback behavior
+    - If the joblib artifacts are missing, model.py uses a calibrated wear-index
+      surrogate based on T50, P30, PS30 and BPR so the demo still returns a
+      prediction.
+    - The fallback is a demo-resilience feature, not the primary model.
+
+5.10 Known limitations
+    - Synthetic C-MAPSS-profile data, not recorded FD001 files.
+    - No live sensor feed or flight-qualified calibration yet.
+    - Model is a decision-support prototype, not a certified airworthiness tool.
+
+
+================================================================================
+6. PHYSICS ENGINE
+================================================================================
+The physics layer turns raw telemetry into interpretable engineering indicators.
+
+6.1 EGT margin
+    EGT_margin = max(0, 880 - EGT_actual)
+    880 C is the modeled maximum continuous redline.
+    A shrinking margin indicates turbine creep and thermal degradation.
+
+6.2 HPC isentropic efficiency
+    eta = (p30/p24)^((gamma-1)/gamma) / (T30/T24)
+    gamma = 1.4
+    The drop is measured against a nominal efficiency of 0.885.
+
+6.3 Vibration
+    Fan and core RMS are tracked with 1X/2X rotor harmonics.
+    Modeled thresholds:
+      Fan:  1.5 / 2.8 / 4.5 mm/s
+      Core: 2.0 / 3.5 / 5.5 mm/s
+
+6.4 Structural fatigue
+    D = sum( delta_G^3.2 / 1.5e5 ) for delta_G > 1.5
+    Simplified rainflow cycle counting with Palmgren-Miner cumulative damage.
+
+6.5 Subsystem health index
+    Weighted overall health:
+      40% propulsion
+      25% hydraulics
+      20% avionics
+      15% airframe
+    Five subsystem groups are rendered in the 3D twin:
+      port engine, starboard engine, hydraulics, avionics/radar, airframe.
+
+6.6 Telemetry simulation
+    Four flight phases:
+      TAKEOFF, COMBAT_MANEUVER, COMBAT_CRUISE, DESCENT_APPROACH
+    Each phase sets altitude, Mach, throttle, G mean and G spread.
+    Degradation scales EGT, vibration, hydraulic pressure, oil pressure,
+    oil temperature, bus error rate and G-load.
+
+
+================================================================================
+7. DATA LAYER AND INTEGRATION MODEL
+================================================================================
+7.1 Fleet
+    - 10 aircraft in the initial registry.
+    - 4 aircraft types:
+        Su-30MKI: 4 aircraft
+        Tejas Mk1A: 3 aircraft
+        Rafale: 2 aircraft
+        MiG-29UPG: 1 aircraft
+    - 6 airbases:
+        Ambala, Halwara, Sulur, Tezpur, Bareilly, Pune.
+    - Statuses: FMC, PMC, AOG.
+
+7.2 Base Repair Depots
+    - 3 BRD Chandigarh: helicopters, transport and Russian aero-engines.
+    - 11 BRD Ojhar/Nashik: Su-30MKI/MiG-29 overhaul, avionics and radar.
+    - 7 BRD Tughlakabad: missile systems, air defense and guided-munitions
+      electronics.
+
+7.3 Spares
+    - 5 NSN-coded items:
+        AL-31FP HPC Stage 3 blade kit
+        Digital hydro-mechanical fuel metering unit (FMU)
+        Fly-by-wire hydraulic actuator
+        MIL-STD-1553B dual-redundant bus interface unit
+        Turbine EGT thermocouple harness assembly
+    - Lead times: 12-36 hours.
+    - Stock levels are tracked in the prototype.
+
+7.4 Work orders
+    - e-MMS-style IDs, tail number, priority (P1 AOG / P2 PMC), status,
+      part needed, depot, destination base, ETA and authorizing officer.
+    - Creating a requisition deducts stock if available and inserts a new work
+      order at the top of the list.
+
+7.5 IETM knowledge base
+    - Four fault families:
+        EGT overheat / margin deterioration
+        Core shaft vibration / bearing harmonics
+        Hydraulic pressure decay / actuator lag
+        MIL-STD-1553B bus parity / timeout
+    - Each has symptoms, four SOP steps, tools and estimated TAT.
+
+7.6 Mission profiles
+    - QRA Scramble: 9.0 G, FMC required, min 25 h RUL, max fatigue 0.85.
+    - Combat Air Patrol: 8.0 G, FMC required, min 30 h RUL, max fatigue 0.80.
+    - Deep Penetration Strike: 7.5 G, FMC required, min 40 h RUL, max fatigue 0.75.
+    - Tactical Recon / Ferry: 4.5 G, PMC allowed, min 15 h RUL, max fatigue 0.92.
+
+7.7 Integration stance
+    - Data contracts are modeled on IAF e-MMS, IMMOLS and BRD workflows.
+    - The current build uses simulated records and in-memory Python structures.
+    - It is a working prototype, not a live depot connection.
+    - Production next step: database-backed store + real connectors + auth/RBAC.
+
+
+================================================================================
+8. API SURFACE
+================================================================================
+Core REST endpoints exposed by FastAPI:
+
+  GET  /api/status
+  GET  /api/health
+  GET  /api/fleet
+  GET  /api/aircraft/{tail}
+  GET  /api/telemetry/{tail}
+  GET  /api/digital-twin/{tail}
+  GET  /api/predict/{tail}
+  GET  /api/logistics
+  POST /api/logistics/order
+  GET  /api/logistics/cannibalization/{tail}/{part_code}
+  GET  /api/dispatch/missions
+  POST /api/dispatch/recommend
+  POST /api/assistant/query
+  GET  /api/benchmark
+  POST /api/whatif
+  GET  /api/export
+
+Interactive OpenAPI docs: http://127.0.0.1:8000/docs
+
+
+================================================================================
+9. VALIDATION AND BENCHMARK SCOPE
+================================================================================
+What the benchmark does:
+  - Generates 120 C-MAPSS-profile engines.
+  - Clips RUL at 125 cycles.
+  - Splits 75/25 by engine unit.
+  - Trains point + q10 + q90 models.
+  - Evaluates MAE, RMSE, R-squared, NASA PHM score and quantile coverage.
+  - Breaks MAE down by remaining-life window.
+
+What the current numbers mean:
+  - 9.13 cycles MAE overall.
+  - 3.86 cycles MAE in the final 0-25 cycle window (highest precision near
+    failure).
+  - 91.4% of true RUL values fall inside the q10-q90 band, above the 80% target.
+  - 30 held-out engines and 7,693 test cycles.
+
+Claim boundary (important for judges):
+  - These are benchmark results on a controlled, synthetic C-MAPSS-profile
+    dataset, not on recorded FD001 files or live squadron telemetry.
+  - The model is a working prototype, not flight-certified.
+  - The next step is a real FD001 loader and field calibration.
+
+Reproduce:
+  cd backend
+  python -m app.train
+  python -m pytest tests/test_vayurakshak.py -q
+
+Current test result: 12 passed.
+
+
+================================================================================
+10. DEPLOYMENT AND SECURITY POSTURE
+================================================================================
+10.1 Current deployment
+    - Local / air-gapped.
+    - React SPA + FastAPI API on one machine.
+    - start.bat trains missing models, builds the UI if needed, and launches
+      Uvicorn on port 8000.
+    - No cloud ML, no external LLM, no paid API.
+    - Fleet data is in-memory and resets with the process.
+
+10.2 Development
+    cd backend
+    uvicorn app.main:app --port 8000 --reload
+
+    cd frontend
+    npm run dev
+    # Vite runs at http://localhost:5173 and proxies /api to port 8000.
+
+10.3 Production hardening still needed
+    - Restrict CORS origins (currently open for local development).
+    - Add authentication and role-based access control.
+    - Add audit logging and digital signatures for work orders.
+    - Move data to a database / time-series store.
+    - Integrate real e-MMS, IMMOLS and BRD connectors.
+    - Add AFNet-specific hardening and deployment packaging.
+
+
+================================================================================
+11. WHAT IS IMPLEMENTED VS WHAT IS NEXT
+================================================================================
+IMPLEMENTED NOW
+  - React console with 7 working tabs + requisition modal.
+  - Fleet overview, filters, AOG/PMC alerts.
+  - 3D Three.js digital twin with exploded view, heatmap and inspector.
+  - RUL prediction with point estimate, q10/q90 bounds, trajectory and
+    SHAP-style attribution.
+  - Physics engine with EGT margin, HPC efficiency, vibration and fatigue.
+  - IMMOLS-style spares catalog and e-MMS-style work orders.
+  - Lead-time-vs-RUL AOG hazard alerts.
+  - Anti-cannibalization donor scoring.
+  - Mission-fit dispatch across four profiles.
+  - Raksha-Mitra IETM/SOP retrieval for four fault families.
+  - C-MAPSS-style benchmark training, evaluation and metrics report.
+  - What-if stress simulator and CSV export.
+  - 12 backend tests passing.
+  - Vite production build.
+
+NEXT
+  - Replace synthetic benchmark data with recorded NASA FD001 files.
+  - Connect to a real sensor/ground-test feed.
+  - Integrate e-MMS and IMMOLS sandboxes.
+  - Add auth/RBAC, audit logging and database persistence.
+  - Field calibration and squadron trial.
+  - Depot rollout across 3 BRD, 11 BRD and 7 BRD.
+  - Flight-certification and safety-case work.
+
+
+================================================================================
+12. PPT SLIDE PLAN (COPY-PASTE READY)
+================================================================================
+Use this as a 9-10 slide narrative. Each slide has a headline, 3-5 bullets,
+and an optional "Say this" line.
+
+SLIDE 1 - TITLE
+Headline: Project VayuRakshak (AeroTwin-AI)
+Subheadline: Sovereign AI-powered predictive maintenance and fleet availability
+Bullets:
+  - SIH 2026 | Problem Statement 26249 | Ministry of Defence (DSSC)
+  - One console for fleet health, RUL prediction, 3D twin, spares and dispatch
+  - Local, air-gapped, no cloud dependency
+Say this: "We built a maintenance decision system, not just a dashboard."
+
+SLIDE 2 - THE PROBLEM
+Headline: Availability is lost between the aircraft and the depot
+Bullets:
+  - FDR/HUMS, 1553 buses, e-MMS logs and depot inventory are disconnected
+  - Fly-to-failure or calendar TBO replaces parts too late or too early
+  - Spares lead time can exceed remaining life, causing AOG and cannibalization
+  - Sortie allocation rarely considers health, fatigue or RUL
+Say this: "The failure is not just mechanical; it is an information and timing
+failure."
+
+SLIDE 3 - SOLUTION AT A GLANCE
+Headline: Four pillars, one closed loop
+Bullets:
+  - Sense: telemetry, subsystem health, 3D twin
+  - Predict: gradient-boosted RUL + q10/q90 + SHAP-style attribution
+  - Sustain: IMMOLS spares, e-MMS work orders, lead-time-vs-RUL alerts
+  - Employ: mission-fit dispatch for QRA, CAP, strike and ferry
+Say this: "Prediction only matters if it changes the spare order and the
+sortie decision."
+
+SLIDE 4 - ARCHITECTURE AND STACK
+Headline: React console over a local Python decision engine
+Bullets:
+  - Frontend: React 19, TypeScript, Vite, Tailwind v4, Three.js, Recharts
+  - Backend: FastAPI + Uvicorn, REST/JSON, OpenAPI docs
+  - ML: scikit-learn HistGradientBoosting, point + q10/q90 models
+  - Data: fleet registry, telemetry simulator, C-MAPSS-profile generator,
+    spares, work orders, IETM
+  - Deployment: local/air-gapped, start.bat, FastAPI serves the built SPA
+Say this: "Everything runs locally; no external model or cloud service is
+required."
+
+SLIDE 5 - MACHINE-LEARNING MODEL
+Headline: Three gradient-boosted models, one calibrated RUL envelope
+Bullets:
+  - 24 features: 3 settings + 21 C-MAPSS sensors
+  - 120-engine run-to-failure harness, 75/25 engine-level split
+  - Point model + q10/q90 quantile models, RUL clipped at 125 cycles
+  - Output: RUL hours, confidence band, risk tier, trajectory, attribution
+  - Results: MAE 9.13 cycles, RMSE 13.20, R-squared 0.893, coverage 91.4%
+Say this: "The model reports the pessimistic bound as well as the average,
+because maintenance planning needs the worst credible case."
+
+SLIDE 6 - PHYSICS AND DIGITAL TWIN
+Headline: Physics gives the limits; ML learns the wear
+Bullets:
+  - EGT margin = max(0, 880 - EGT)
+  - HPC isentropic efficiency from pressure/temperature ratio
+  - Fan/core vibration with 1X/2X harmonics
+  - Rainflow + Palmgren-Miner fatigue index
+  - Three.js twin: exploded view, heatmap, subsystem inspector
+Say this: "The twin answers where the problem is; the physics answers why it
+matters."
+
+SLIDE 7 - LOGISTICS AND DISPATCH
+Headline: From prediction to action
+Bullets:
+  - IMMOLS-style catalog: 5 NSN items, 12-36 h lead times
+  - e-MMS work orders with priority, depot, ETA and authorizing officer
+  - AOG alert when lead time > remaining life
+  - Anti-cannibalization donor scoring
+  - Mission dispatch ranks airframes by status, RUL, fatigue and health
+Say this: "A prediction becomes useful only when it changes a requisition or a
+sortie."
+
+SLIDE 8 - VALIDATION
+Headline: Measured on held-out engines, not on the training set
+Bullets:
+  - 30 held-out engines, 7,693 test cycles
+  - MAE 9.13 cycles; RMSE 13.20; R-squared 0.893
+  - 91.4% q10-q90 coverage (target 80%)
+  - 3.86 cycles MAE in the final 0-25 cycle window
+  - 12 backend tests passing
+Say this: "Near failure, the error drops to under four cycles, which is where
+flight safety matters most."
+
+SLIDE 9 - IMPACT AND ROADMAP
+Headline: Built to run inside the station, not in the cloud
+Bullets:
+  - Target: raise mission-capable rate from ~60-65% toward >85%
+  - Pre-position spares 45-60 cycles ahead; reduce AOG and cannibalization
+  - Phase 1: e-MMS/IMMOLS sandbox + real FD001 loader
+  - Phase 2: squadron field trial and calibration
+  - Phase 3: depot rollout across 3 BRD, 11 BRD and 7 BRD
+Say this: "This is a working prototype with a clear path to a squadron trial."
+
+SLIDE 10 - CLOSING
+Headline: From reactive maintenance to predictive fleet availability
+Subheadline: Sovereign, explainable, air-gapped
+Bullets:
+  - Physics + ML + digital twin + logistics + dispatch in one system
+  - Local-first architecture with no external dependencies
+  - Measured RUL accuracy and a live working console
+  - Ready for integration with IAF maintenance systems
+Say this: "We are not predicting for its own sake. We are protecting
+availability."
+
+
+================================================================================
+13. SHORT COPY FOR A SINGLE SUMMARY SLIDE
+================================================================================
+Built with:
+  React 19 + TypeScript + Vite + Tailwind CSS v4 + Three.js + Recharts;
+  FastAPI + Uvicorn + pandas + NumPy + scikit-learn + joblib.
+
+Intelligence:
+  Physics-informed RUL prediction using HistGradientBoosting point + q10/q90
+  models; 24 features; 120-engine C-MAPSS-profile harness; SHAP-style sensor
+  attribution; lead-time-vs-RUL spares alerts; mission-fit dispatch.
+
+Proof:
+  9.13 cycles MAE; 13.20 RMSE; 0.893 R-squared; 91.4% q10-q90 coverage;
+  30 held-out engines; 7,693 test cycles; 12 backend tests passing.
+
+Status:
+  Working local prototype. Synthetic benchmark data and simulated depot records
+  today; real FD001 data, e-MMS/IMMOLS connectors and field calibration next.
+
+
+================================================================================
+14. DEMO / RUN COMMANDS
+================================================================================
+One-command Windows launch (from repository root):
+
+  start.bat
+
+Manual backend:
+
+  cd backend
+  pip install -r requirements.txt
+  python -m app.train
+  python -m pytest tests/test_vayurakshak.py -q
+  uvicorn app.main:app --port 8000 --reload
+
+Manual frontend:
+
+  cd frontend
+  npm install
+  npm run dev
+  # http://localhost:5173
+
+Production build:
+
+  cd frontend
+  npx vite build
+
+API docs:
+
+  http://127.0.0.1:8000/docs
+
+
+================================================================================
+15. ONE-LINE CLOSING
+================================================================================
+VayuRakshak turns aircraft health data into earlier spare orders, smarter
+inspections and safer sortie allocation - locally, explainably and without a
+cloud dependency.
+
+================================================================================
+END OF FILE
+================================================================================

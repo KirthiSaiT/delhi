@@ -1,0 +1,1388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VayuRakshak — Technical Solution Dossier</title>
+<meta name="description" content="Presentation-ready technical overview of Project VayuRakshak (AeroTwin-AI): software stack, ML models, physics engine, data layer, validation and deployment." />
+<style>
+  :root {
+    --bg: #f6f6f4;
+    --paper: #ffffff;
+    --ink: #191919;
+    --muted: #6b6b66;
+    --soft: #fbfbfa;
+    --line: #e7e7e4;
+    --line-soft: #f1f1ef;
+    --accent: #0075de;
+    --accent-2: #005eb3;
+    --accent-soft: #eaf4fe;
+    --accent-line: #cfe6fb;
+    --green: #0f7b3f;
+    --green-soft: #eaf7ef;
+    --green-line: #c7ead5;
+    --amber: #b45309;
+    --amber-soft: #fff7e8;
+    --amber-line: #f3d9a6;
+    --red: #b42318;
+    --red-soft: #fef3f2;
+    --red-line: #f4c7c1;
+    --purple: #6941c6;
+    --purple-soft: #f4f0ff;
+    --radius: 18px;
+    --shadow: 0 1px 2px rgba(15, 15, 15, .04), 0 12px 28px rgba(15, 15, 15, .05);
+    --font: Inter, "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: #cce3f9; }
+  a { color: var(--accent-2); }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--line);
+    background: rgba(246, 246, 244, .9);
+    backdrop-filter: blur(14px);
+  }
+  .toolbar-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 11px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: var(--ink); color: #fff;
+    font-size: 12px; font-weight: 800; letter-spacing: .04em;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+  }
+  .brand strong { display: block; font-size: 14px; letter-spacing: -.01em; line-height: 1.1; }
+  .brand small { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; letter-spacing: .02em; }
+  .toolbar-nav { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+  .toolbar-nav a {
+    font-size: 11.5px; font-weight: 600; color: var(--muted);
+    text-decoration: none; padding: 7px 9px; border-radius: 8px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .toolbar-nav a:hover { background: #ececea; color: var(--ink); }
+  .print-btn {
+    appearance: none; border: 1px solid var(--accent);
+    background: var(--accent); color: #fff;
+    font-family: var(--font); font-size: 12px; font-weight: 700;
+    padding: 8px 13px; border-radius: 8px; cursor: pointer;
+    white-space: nowrap; box-shadow: 0 1px 2px rgba(0, 94, 179, .2);
+  }
+  .print-btn:hover { background: var(--accent-2); }
+
+  /* ---------- Deck & slides ---------- */
+  .deck {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 24px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .slide {
+    position: relative;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 42px 50px 40px;
+    min-height: 680px;
+    overflow: hidden;
+  }
+  .slide::after {
+    content: "";
+    position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: linear-gradient(90deg, var(--accent) 0%, #74b6f5 52%, transparent 100%);
+    opacity: .85;
+  }
+  .slide > * { position: relative; z-index: 1; }
+  .slide-number {
+    position: absolute; top: 17px; right: 24px; z-index: 2;
+    font-size: 10px; font-weight: 800; letter-spacing: .16em;
+    text-transform: uppercase; color: #a3a39d;
+  }
+  .slide-footer {
+    margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line-soft);
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 10.5px; color: #9a9a94; letter-spacing: .02em;
+  }
+
+  /* ---------- Type ---------- */
+  .eyebrow {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 800; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1, h2, h3, p { margin-top: 0; }
+  h1 { font-size: clamp(54px, 7.4vw, 88px); line-height: .94; letter-spacing: -.065em; margin: 14px 0 10px; }
+  h2 { font-size: clamp(28px, 3vw, 38px); line-height: 1.1; letter-spacing: -.035em; margin: 7px 0 9px; }
+  h3 { font-size: 15.5px; line-height: 1.25; letter-spacing: -.015em; margin: 0 0 5px; }
+  .lede { color: var(--muted); font-size: 15.5px; line-height: 1.55; max-width: 82ch; margin: 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+  .tiny { font-size: 10.5px; letter-spacing: .03em; }
+  .strong { font-weight: 800; letter-spacing: -.02em; }
+  .accent { color: var(--accent); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+  .purple { color: var(--purple); }
+  .mono { font-family: var(--mono); font-size: .9em; }
+  code {
+    font-family: var(--mono); font-size: .88em;
+    background: #f4f4f2; border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 5px; white-space: nowrap;
+  }
+  .section-head { margin-bottom: 22px; }
+
+  /* ---------- Layout ---------- */
+  .grid-2, .grid-3, .grid-4 { display: grid; gap: 14px; min-width: 0; }
+  .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .two-col { display: grid; grid-template-columns: 1.15fr .85fr; gap: 24px; align-items: start; min-width: 0; }
+  .two-col.wide-left { grid-template-columns: 1.45fr .55fr; }
+  .stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .two-col > *, .grid-2 > *, .grid-3 > *, .grid-4 > *, .summary-grid > *, .timeline > * { min-width: 0; }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    min-width: 0;
+  }
+  .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .card .tag {
+    display: inline-block; margin-top: 10px;
+    font-size: 10px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .card.tint-blue { background: var(--accent-soft); border-color: var(--accent-line); }
+  .card.tint-green { background: var(--green-soft); border-color: var(--green-line); }
+  .card.tint-amber { background: var(--amber-soft); border-color: var(--amber-line); }
+  .card.tint-purple { background: var(--purple-soft); border-color: #ddd1ff; }
+  .num {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center;
+    background: var(--accent-soft); color: var(--accent-2);
+    font-size: 12px; font-weight: 800; letter-spacing: .02em;
+    margin-bottom: 10px;
+  }
+  .num.green { background: var(--green-soft); color: var(--green); }
+  .num.amber { background: var(--amber-soft); color: var(--amber); }
+  .num.purple { background: var(--purple-soft); color: var(--purple); }
+
+  /* ---------- Pills & chips ---------- */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--soft);
+    color: var(--muted); font-size: 11px; font-weight: 650;
+    white-space: nowrap;
+  }
+  .pill.accent { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-2); }
+  .pill.green { background: var(--green-soft); border-color: var(--green-line); color: var(--green); }
+  .pill.amber { background: var(--amber-soft); border-color: var(--amber-line); color: var(--amber); }
+  .pill.red { background: var(--red-soft); border-color: var(--red-line); color: var(--red); }
+  .pill.purple { background: var(--purple-soft); border-color: #ddd1ff; color: var(--purple); }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 13px 15px; border-radius: 12px;
+    border: 1px solid var(--accent-line); background: var(--accent-soft);
+    color: #0b4f8a; font-size: 12.5px; line-height: 1.5;
+  }
+  .callout strong { color: #083f70; }
+  .callout.warn { border-color: var(--amber-line); background: var(--amber-soft); color: #7a3d00; }
+  .callout.warn strong { color: #5f2f00; }
+  .callout.good { border-color: var(--green-line); background: var(--green-soft); color: #0b5b2e; }
+  .callout.good strong { color: #074322; }
+  .callout .mark {
+    flex: 0 0 auto; width: 20px; height: 20px; border-radius: 6px;
+    display: grid; place-items: center; background: rgba(0, 117, 222, .12);
+    font-size: 11px; font-weight: 800; color: var(--accent-2);
+  }
+  .callout.warn .mark { background: rgba(180, 83, 9, .12); color: var(--amber); }
+  .callout.good .mark { background: rgba(15, 123, 63, .12); color: var(--green); }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    background:
+      radial-gradient(900px 520px at 86% 8%, #eaf4fe 0%, rgba(234, 244, 254, 0) 62%),
+      radial-gradient(700px 420px at 8% 100%, #f3f8fc 0%, rgba(243, 248, 252, 0) 60%),
+      #fff;
+  }
+  .cover::after { height: 6px; }
+  .cover-grid { display: grid; grid-template-columns: 1.38fr .8fr; gap: 36px; align-items: center; min-height: 590px; }
+  .cover-sub { font-size: clamp(19px, 2.1vw, 26px); font-weight: 750; letter-spacing: -.025em; margin: 0 0 13px; }
+  .cover-copy { font-size: 15px; color: var(--muted); line-height: 1.62; max-width: 60ch; margin-bottom: 18px; }
+  .cover-note { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size: 11.5px; color: var(--muted); }
+  .cover-panel {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; box-shadow: 0 10px 30px rgba(15, 15, 15, .06);
+  }
+  .panel-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .stat-grid > div { background: var(--soft); border: 1px solid var(--line); border-radius: 11px; padding: 10px 11px; }
+  .stat-grid strong { display: block; font-size: 24px; line-height: 1; letter-spacing: -.04em; }
+  .stat-grid span { display: block; margin-top: 5px; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .toc { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
+  .toc a { display: flex; gap: 7px; align-items: baseline; color: var(--muted); text-decoration: none; font-size: 10.5px; font-weight: 600; }
+  .toc a:hover { color: var(--accent-2); }
+  .toc a b { color: #b0b0aa; font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+
+  /* ---------- Flow ---------- */
+  .flow { display: flex; align-items: stretch; gap: 7px; margin-top: 4px; }
+  .flow-step {
+    flex: 1; min-width: 0;
+    background: var(--soft); border: 1px solid var(--line);
+    border-radius: 11px; padding: 10px 11px;
+  }
+  .flow-step b { display: block; font-size: 11px; letter-spacing: -.01em; }
+  .flow-step span { display: block; margin-top: 3px; font-size: 10px; color: var(--muted); line-height: 1.35; }
+  .flow-arrow { display: grid; place-items: center; flex: 0 0 16px; color: #bcbcb6; font-size: 15px; font-weight: 700; }
+
+  /* ---------- Architecture ---------- */
+  .arch { display: flex; flex-direction: column; gap: 8px; }
+  .arch-layer {
+    display: grid; grid-template-columns: 118px 1fr; gap: 14px; align-items: start;
+    background: var(--soft); border: 1px solid var(--line); border-radius: 13px;
+    padding: 13px 15px;
+  }
+  .arch-label { font-size: 9.5px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
+  .arch-body { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    display: inline-flex; align-items: center;
+    padding: 4px 7px; border-radius: 6px;
+    border: 1px solid var(--line); background: #fff;
+    font-size: 10.5px; font-weight: 650; color: #3c3c38;
+    white-space: nowrap;
+  }
+  .chip.blue { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-2); }
+  .chip.green { background: var(--green-soft); border-color: var(--green-line); color: var(--green); }
+  .chip.amber { background: var(--amber-soft); border-color: var(--amber-line); color: var(--amber); }
+  .chip.purple { background: var(--purple-soft); border-color: #ddd1ff; color: var(--purple); }
+  .arch-arrow { text-align: center; color: #b8b8b2; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .arch-arrow span { display: inline-block; margin-left: 5px; font-size: 13px; }
+
+  /* ---------- Metrics ---------- */
+  .metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+  .metrics.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .metrics.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .metric {
+    background: var(--soft); border: 1px solid var(--line);
+    border-radius: 12px; padding: 13px 14px; min-width: 0;
+  }
+  .metric .value { font-size: 28px; line-height: 1; font-weight: 850; letter-spacing: -.045em; color: var(--ink); }
+  .metric .value small { font-size: 12px; font-weight: 700; letter-spacing: 0; color: var(--muted); margin-left: 2px; }
+  .metric .label { margin-top: 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .metric .note { margin-top: 3px; font-size: 10.5px; color: #8a8a84; line-height: 1.35; }
+  .metric.blue .value { color: var(--accent); }
+  .metric.green .value { color: var(--green); }
+  .metric.amber .value { color: var(--amber); }
+  .metric.purple .value { color: var(--purple); }
+  .metric.red .value { color: var(--red); }
+
+  /* ---------- Tables ---------- */
+  .table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+  .table th {
+    text-align: left; font-size: 9.5px; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 7px 9px; border-bottom: 1px solid var(--line);
+  }
+  .table td { padding: 6px 9px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .table tr:last-child td { border-bottom: none; }
+  .table td:first-child, .table th:first-child { padding-left: 0; }
+  .table td:last-child, .table th:last-child { padding-right: 0; }
+  .table .mono { font-size: 10.5px; color: #4a4a45; }
+
+  /* ---------- Bars ---------- */
+  .bar-row { display: grid; grid-template-columns: 112px 1fr 58px; gap: 10px; align-items: center; margin: 7px 0; }
+  .bar-label { font-size: 11px; font-weight: 650; color: #3c3c38; }
+  .bar-track { height: 7px; background: var(--line-soft); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), #6cb3f5); }
+  .bar-value { font-size: 11px; font-weight: 800; color: var(--ink); text-align: right; white-space: nowrap; }
+  .bar-value span { font-weight: 600; color: var(--muted); }
+
+  /* ---------- Steps ---------- */
+  .steps { display: flex; flex-direction: column; gap: 10px; }
+  .step { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+  .step .num { margin: 0; width: 26px; height: 26px; border-radius: 8px; font-size: 10.5px; }
+  .step h3 { font-size: 12.5px; margin-bottom: 2px; }
+  .step p { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+  .step p b { color: #3c3c38; }
+
+  /* ---------- Gallery ---------- */
+  .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+  .shot { border: 1px solid var(--line); border-radius: 11px; overflow: hidden; background: var(--soft); min-width: 0; }
+  .shot img { display: block; width: 100%; height: 138px; object-fit: cover; object-position: top; }
+  .shot .cap { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 9px; font-size: 10px; color: var(--muted); }
+  .shot .cap b { color: var(--ink); font-size: 10.5px; letter-spacing: -.01em; }
+  .shot .cap span { color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .twin-shot { display: block; max-width: 100%; }
+  .twin-shot img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; }
+  .twin-caption { margin-top: 6px; font-size: 10px; color: var(--muted); }
+
+  /* ---------- Roadmap ---------- */
+  .timeline { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+  .phase { position: relative; background: var(--soft); border: 1px solid var(--line); border-radius: 13px; padding: 15px; }
+  .phase::before { content: ""; position: absolute; top: 0; left: 15px; right: 15px; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
+  .phase:nth-child(2)::before { background: var(--amber); }
+  .phase:nth-child(3)::before { background: var(--green); }
+  .phase .when { font-size: 9.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .phase h3 { margin: 6px 0 4px; font-size: 13px; }
+  .phase p { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.45; }
+
+  /* ---------- Summary ---------- */
+  .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 6px; }
+  .summary-card { background: var(--soft); border: 1px solid var(--line); border-radius: 15px; padding: 20px; }
+  .summary-card h3 { font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .summary-card ul { margin: 0; padding-left: 17px; }
+  .summary-card li { margin: 5px 0; font-size: 12.5px; color: #3c3c38; line-height: 1.45; }
+  .summary-card li b { color: var(--ink); }
+  .closing {
+    margin-top: 20px; padding: 22px 24px;
+    border-radius: 15px; border: 1px solid var(--accent-line);
+    background: linear-gradient(120deg, #eaf4fe 0%, #f7fbff 60%, #ffffff 100%);
+  }
+  .closing p { margin: 0; font-size: clamp(18px, 2.2vw, 25px); font-weight: 800; letter-spacing: -.035em; line-height: 1.25; color: #0b3f6e; }
+  .closing span { display: block; margin-top: 8px; font-size: 12px; font-weight: 500; color: #3f6d95; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1080px) {
+    .toolbar-nav { display: none; }
+    .cover-grid { grid-template-columns: 1fr; gap: 24px; min-height: 0; }
+    .cover-panel { max-width: 560px; }
+  }
+  @media (max-width: 900px) {
+    .deck { padding: 16px 14px 44px; gap: 16px; }
+    .slide { padding: 30px 24px 28px; min-height: 0; }
+    .two-col, .two-col.wide-left, .grid-2, .grid-3, .grid-4, .timeline, .summary-grid { grid-template-columns: 1fr; }
+    .metrics, .metrics.four, .metrics.six { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); flex-basis: 14px; }
+    .arch-layer { grid-template-columns: 1fr; gap: 7px; }
+    .cover h1 { font-size: 58px; }
+    .slide-number { top: 13px; right: 16px; }
+  }
+  @media (max-width: 560px) {
+    .toolbar-inner { padding: 9px 13px; }
+    .brand small { display: none; }
+    .print-btn { padding: 7px 9px; font-size: 11px; }
+    .slide { padding: 26px 17px 24px; border-radius: 14px; }
+    .metrics, .metrics.four, .metrics.six, .gallery { grid-template-columns: 1fr; }
+    .shot img { height: 170px; }
+    .cover h1 { font-size: 50px; }
+    .slide-footer { flex-direction: column; gap: 4px; }
+    .bar-row { grid-template-columns: 92px 1fr 52px; }
+  }
+
+  /* ---------- Print / PDF ---------- */
+  @media print {
+    @page { size: A4 landscape; margin: 0; }
+    html, body { background: #fff; }
+    .no-print { display: none !important; }
+    .toolbar { display: none !important; }
+    .deck { max-width: none; padding: 0; gap: 0; }
+    .slide {
+      border: none; border-radius: 0; box-shadow: none;
+      min-height: 0; padding: 28px 34px 24px;
+      page-break-after: always; break-after: page;
+      overflow: hidden;
+    }
+    .slide:last-child { page-break-after: auto; break-after: auto; }
+    .slide::after { display: none; }
+    .slide-number { top: 13px; right: 18px; }
+    .slide-footer { margin-top: 14px; padding-top: 8px; font-size: 9px; }
+    .cover { background: #fff; }
+    .cover-grid { min-height: 0; grid-template-columns: 1.38fr .8fr; gap: 24px; }
+    .cover h1 { font-size: 62px; }
+    .cover-sub { font-size: 20px; }
+    .cover-copy { font-size: 12px; }
+    h2 { font-size: 28px; }
+    .lede { font-size: 12px; }
+    .section-head { margin-bottom: 14px; }
+    .card { padding: 12px 13px; }
+    .card p, .step p { font-size: 10.5px; }
+    .card h3, .phase h3 { font-size: 12px; }
+    .metric .value { font-size: 23px; }
+    .metric .label { font-size: 8.5px; }
+    .metric .note { font-size: 9px; }
+    .grid-2, .grid-3, .grid-4 { gap: 9px; }
+    .two-col { gap: 16px; }
+    .shot img { height: 108px; }
+    .shot .cap { padding: 5px 7px; font-size: 8.5px; }
+    .shot .cap b { font-size: 9px; }
+    .summary-card li { font-size: 10.5px; }
+    .closing p { font-size: 19px; }
+    .closing span { font-size: 10px; }
+    .table { font-size: 10.5px; }
+    .table td { padding: 6px 7px; }
+    .bar-row { margin: 5px 0; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="toolbar no-print">
+  <div class="toolbar-inner">
+    <a class="brand" href="#cover" aria-label="VayuRakshak solution dossier home">
+      <span class="brand-mark">VR</span>
+      <span>
+        <strong>VayuRakshak</strong>
+        <small>Technical solution dossier · 2026</small>
+      </span>
+    </a>
+    <nav class="toolbar-nav" aria-label="Dossier sections">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#stack">Stack</a>
+      <a href="#model">Model</a>
+      <a href="#physics">Physics</a>
+      <a href="#modules">Modules</a>
+      <a href="#validation">Validation</a>
+      <a href="#prototype">Prototype</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+    <button class="print-btn" id="printBtn" type="button">Print / Save PDF</button>
+  </div>
+</header>
+
+<main class="deck">
+
+  <!-- 01 · COVER -->
+  <section class="slide cover" id="cover">
+    <div class="slide-number">01 / 12</div>
+    <div class="cover-grid">
+      <div>
+        <span class="eyebrow">SIH 2026 · Problem Statement 26249 · Ministry of Defence (DSSC)</span>
+        <h1>VayuRakshak<span class="accent">.</span></h1>
+        <p class="cover-sub">AeroTwin-AI — Predictive Maintenance &amp; Fleet Availability Platform</p>
+        <p class="cover-copy">
+          A sovereign, air-gapped maintenance decision system that fuses aircraft telemetry,
+          physics-based degradation models and gradient-boosted Remaining Useful Life prediction
+          to keep combat aircraft mission-ready.
+        </p>
+        <div class="pill-row">
+          <span class="pill accent">React 19 + TypeScript</span>
+          <span class="pill accent">FastAPI + scikit-learn</span>
+          <span class="pill green">Physics + ML</span>
+          <span class="pill purple">3D Digital Twin</span>
+          <span class="pill">e-MMS / IMMOLS interfaces</span>
+        </div>
+        <div class="cover-note">
+          Technical dossier for presentation: software stack, ML model, physics engine, data layer,
+          validation results and deployment posture.
+        </div>
+      </div>
+
+      <aside class="cover-panel" aria-label="Solution at a glance">
+        <div class="panel-label">At a glance</div>
+        <div class="stat-grid">
+          <div><strong>10</strong><span>aircraft</span></div>
+          <div><strong>6</strong><span>airbases</span></div>
+          <div><strong>4</strong><span>fighter types</span></div>
+          <div><strong>8</strong><span>console modules</span></div>
+        </div>
+        <div class="toc">
+          <a href="#problem"><b>01</b> Problem</a>
+          <a href="#solution"><b>02</b> Solution</a>
+          <a href="#architecture"><b>03</b> Architecture</a>
+          <a href="#stack"><b>04</b> Software stack</a>
+          <a href="#model"><b>05</b> ML model</a>
+          <a href="#physics"><b>06</b> Physics &amp; twin</a>
+          <a href="#modules"><b>07</b> Modules &amp; data</a>
+          <a href="#validation"><b>08</b> Validation</a>
+          <a href="#prototype"><b>09</b> Prototype</a>
+          <a href="#roadmap"><b>10</b> Deployment</a>
+          <a href="#summary"><b>11</b> Summary</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- 02 · PROBLEM -->
+  <section class="slide" id="problem">
+    <div class="slide-number">02 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">01 · The operational problem</span>
+      <h2>Availability is lost between the aircraft and the depot.</h2>
+      <p class="lede">
+        Military air fleets lose mission-capable hours to disconnected data, reactive maintenance
+        and parts that arrive after the aircraft is already grounded. The platform targets the
+        full closed loop — sense, predict, sustain and employ.
+      </p>
+    </div>
+
+    <div class="grid-4">
+      <article class="card">
+        <div class="num">01</div>
+        <h3>Data is fragmented</h3>
+        <p>FDR/HUMS telemetry, MIL-STD-1553B avionics buses, paper/e-MMS logs and depot inventory live in separate silos.</p>
+        <span class="tag">No single airframe truth</span>
+      </article>
+      <article class="card">
+        <div class="num">02</div>
+        <h3>Maintenance is reactive</h3>
+        <p>Fly-to-failure or rigid calendar TBO means components are replaced too late, or pulled too early with life remaining.</p>
+        <span class="tag">Condition is not the trigger</span>
+      </article>
+      <article class="card">
+        <div class="num">03</div>
+        <h3>AOG creates cannibalization</h3>
+        <p>When a spare's depot lead time exceeds the component's remaining life, crews strip parts from other jets to keep one flying.</p>
+        <span class="tag">One snag grounds two airframes</span>
+      </article>
+      <article class="card">
+        <div class="num">04</div>
+        <h3>Dispatch is health-blind</h3>
+        <p>Sortie allocation rarely considers fatigue index, subsystem health or RUL, so high-stress missions can go to the wrong airframe.</p>
+        <span class="tag">Mission mismatch</span>
+      </article>
+    </div>
+
+    <div class="callout" style="margin-top:18px">
+      <span class="mark">→</span>
+      <div>
+        <strong>Design goal:</strong> predict degradation early enough to position the right spare,
+        inspect the right subsystem and assign the right aircraft — before an AOG event occurs.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Problem framing · MoD / DSSC · PS 26249</span>
+    </div>
+  </section>
+
+  <!-- 03 · SOLUTION -->
+  <section class="slide" id="solution">
+    <div class="slide-number">03 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">02 · Solution at a glance</span>
+      <h2>Four pillars, one closed maintenance loop.</h2>
+      <p class="lede">
+        Every pillar is implemented in the working prototype and exposed through the same FastAPI
+        backend, so the dashboard behaves as one system rather than four disconnected demos.
+      </p>
+    </div>
+
+    <div class="grid-4">
+      <article class="card tint-blue">
+        <div class="num">01</div>
+        <h3>Sense</h3>
+        <p>High-frequency telemetry profile for four flight phases, 21 C-MAPSS sensor channels and derived subsystem health indices.</p>
+        <span class="tag">physics.py · /api/telemetry</span>
+      </article>
+      <article class="card tint-purple">
+        <div class="num purple">02</div>
+        <h3>Predict</h3>
+        <p>Three gradient-boosted regressors produce a point RUL, 10th/90th percentile bounds, risk tier and sensor attribution.</p>
+        <span class="tag">model.py · /api/predict</span>
+      </article>
+      <article class="card tint-amber">
+        <div class="num amber">03</div>
+        <h3>Sustain</h3>
+        <p>IMMOLS-style spares catalog, e-MMS work orders, lead-time-vs-RUL alarms and donor scoring for anti-cannibalization.</p>
+        <span class="tag">logistics.py · /api/logistics</span>
+      </article>
+      <article class="card tint-green">
+        <div class="num green">04</div>
+        <h3>Employ</h3>
+        <p>Mission-fit ranking for QRA, CAP, deep strike and ferry profiles using status, RUL, fatigue and subsystem health.</p>
+        <span class="tag">dispatch.py · /api/dispatch</span>
+      </article>
+    </div>
+
+    <div class="flow" style="margin-top:16px" aria-label="Closed maintenance loop">
+      <div class="flow-step"><b>Aircraft sensors</b><span>EGT, vibration, hydraulics, 1553 bus, G-load</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>Telemetry + health</b><span>Physics limits and subsystem health indices</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>RUL + XAI</b><span>Point estimate, q10–q90 band, root-cause drivers</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>Twin + depot</b><span>3D location, spares lead time, work order</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>Mission dispatch</b><span>Ranked, health-aware sortie allocation</span></div>
+      <div class="flow-arrow">↺</div>
+    </div>
+
+    <div class="callout good" style="margin-top:14px">
+      <span class="mark">✓</span>
+      <div>
+        <strong>Closed loop:</strong> a predicted RUL below the depot lead time raises an AOG-hazard alert,
+        creates a pre-order, and removes the airframe from mission profiles it can no longer safely fly.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Sense → Predict → Sustain → Employ</span>
+    </div>
+  </section>
+
+  <!-- 04 · ARCHITECTURE -->
+  <section class="slide" id="architecture">
+    <div class="slide-number">04 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">03 · System architecture</span>
+      <h2>A browser console over a local Python decision engine.</h2>
+      <p class="lede">
+        The frontend is a React single-page application. FastAPI owns the fleet, ML, physics,
+        logistics and dispatch logic, and can serve the built SPA from the same local process.
+      </p>
+    </div>
+
+    <div class="two-col wide-left">
+      <div class="arch">
+        <div class="arch-layer">
+          <div class="arch-label">Presentation</div>
+          <div class="arch-body">
+            <span class="chip blue">React 19 SPA</span>
+            <span class="chip">TypeScript</span>
+            <span class="chip">Vite</span>
+            <span class="chip">Tailwind CSS v4</span>
+            <span class="chip">Three.js twin</span>
+            <span class="chip">Recharts</span>
+            <span class="chip">MapLibre GL</span>
+            <span class="chip">Lucide icons</span>
+          </div>
+        </div>
+        <div class="arch-arrow">REST / JSON <span>↕</span> /api</div>
+        <div class="arch-layer">
+          <div class="arch-label">API</div>
+          <div class="arch-body">
+            <span class="chip blue">FastAPI</span>
+            <span class="chip">Uvicorn</span>
+            <span class="chip">Pydantic models</span>
+            <span class="chip">OpenAPI /docs</span>
+            <span class="chip">CORS</span>
+            <span class="chip">Static SPA hosting</span>
+          </div>
+        </div>
+        <div class="arch-arrow">calls <span>↕</span> Python engines</div>
+        <div class="arch-layer">
+          <div class="arch-label">Intelligence</div>
+          <div class="arch-body">
+            <span class="chip purple">RUL predictor</span>
+            <span class="chip purple">Physics engine</span>
+            <span class="chip purple">Risk classifier</span>
+            <span class="chip purple">XAI attribution</span>
+            <span class="chip purple">Dispatch scoring</span>
+            <span class="chip purple">Cannibalization scoring</span>
+            <span class="chip purple">IETM retrieval</span>
+          </div>
+        </div>
+        <div class="arch-arrow">reads <span>↕</span> in-memory state</div>
+        <div class="arch-layer">
+          <div class="arch-label">Data</div>
+          <div class="arch-body">
+            <span class="chip green">Fleet registry</span>
+            <span class="chip green">Telemetry simulator</span>
+            <span class="chip green">C-MAPSS generator</span>
+            <span class="chip green">Spares &amp; work orders</span>
+            <span class="chip green">IETM knowledge base</span>
+            <span class="chip green">Mission profiles</span>
+          </div>
+        </div>
+        <div class="arch-arrow">interfaces <span>↕</span> modeled</div>
+        <div class="arch-layer">
+          <div class="arch-label">Interfaces</div>
+          <div class="arch-body">
+            <span class="chip amber">e-MMS</span>
+            <span class="chip amber">IMMOLS</span>
+            <span class="chip amber">3 / 11 / 7 BRD</span>
+            <span class="chip amber">MIL-STD-1553B</span>
+            <span class="chip amber">ARINC-429</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3>Request path</h3>
+          <p>
+            <b>1.</b> React fetches <code>/api/fleet</code> on load.<br />
+            <b>2.</b> Selecting a tail triggers <code>/api/digital-twin</code> and <code>/api/predict</code>.<br />
+            <b>3.</b> FastAPI calls the physics and ML engines.<br />
+            <b>4.</b> JSON returns to the console; Recharts and Three.js render it.<br />
+            <b>5.</b> A work order posts back to <code>/api/logistics/order</code>.
+          </p>
+        </div>
+        <div class="card tint-green">
+          <h3>Deployment shape</h3>
+          <p>
+            One local process can serve the API and the compiled SPA. The Windows launcher
+            <code>start.bat</code> trains missing models, builds the UI if needed and starts Uvicorn.
+          </p>
+        </div>
+        <div class="callout warn">
+          <span class="mark">!</span>
+          <div>
+            <strong>Demo-state note:</strong> fleet, spares and IETM records are in-memory Python
+            structures. They are intentionally local and reset with the process.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Presentation → API → Intelligence → Data → Interfaces</span>
+    </div>
+  </section>
+
+  <!-- 05 · STACK -->
+  <section class="slide" id="stack">
+    <div class="slide-number">05 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">04 · Software stack</span>
+      <h2>What the solution is built with.</h2>
+      <p class="lede">
+        Versions below come from <code>frontend/package.json</code> and the backend manifests.
+        The stack is deliberately local-first: no cloud ML service, no external LLM and no paid API.
+      </p>
+    </div>
+
+    <div class="grid-2">
+      <article class="card">
+        <div class="num">FE</div>
+        <h3>Frontend</h3>
+        <table class="table">
+          <tr><td><b>React</b></td><td class="mono">19.2.8</td><td class="muted">UI runtime</td></tr>
+          <tr><td><b>TypeScript</b></td><td class="mono">~6.0.2</td><td class="muted">typed contracts</td></tr>
+          <tr><td><b>Vite</b></td><td class="mono">8.3</td><td class="muted">dev server + build</td></tr>
+          <tr><td><b>Tailwind CSS</b></td><td class="mono">4.3.3</td><td class="muted">Notion-style UI</td></tr>
+          <tr><td><b>Three.js</b></td><td class="mono">0.186.1</td><td class="muted">WebGL digital twin</td></tr>
+          <tr><td><b>Recharts</b></td><td class="mono">3.8</td><td class="muted">RUL + health charts</td></tr>
+          <tr><td><b>MapLibre GL</b></td><td class="mono">6.11.2</td><td class="muted">base / map layers</td></tr>
+          <tr><td><b>Lucide React</b></td><td class="mono">1.49</td><td class="muted">icon system</td></tr>
+        </table>
+      </article>
+
+      <article class="card">
+        <div class="num green">BE</div>
+        <h3>Backend &amp; API</h3>
+        <table class="table">
+          <tr><td><b>Python</b></td><td class="mono">3.x</td><td class="muted">runtime</td></tr>
+          <tr><td><b>FastAPI</b></td><td class="mono">API v2.0.0</td><td class="muted">REST + OpenAPI</td></tr>
+          <tr><td><b>Uvicorn</b></td><td class="mono">requirements</td><td class="muted">ASGI server</td></tr>
+          <tr><td><b>Pydantic</b></td><td class="mono">FastAPI</td><td class="muted">request validation</td></tr>
+          <tr><td><b>pandas / NumPy</b></td><td class="mono">requirements</td><td class="muted">data + math</td></tr>
+          <tr><td><b>scikit-learn</b></td><td class="mono">requirements</td><td class="muted">gradient boosting</td></tr>
+          <tr><td><b>joblib</b></td><td class="mono">requirements</td><td class="muted">model artifacts</td></tr>
+          <tr><td><b>pytest / TestClient</b></td><td class="mono">12 tests</td><td class="muted">API + engine checks</td></tr>
+        </table>
+      </article>
+
+      <article class="card tint-purple">
+        <div class="num purple">ML</div>
+        <h3>Models &amp; math</h3>
+        <p>
+          <b>HistGradientBoostingRegressor</b> — point estimate plus two quantile models
+          (10th and 90th percentile). Target is RUL clipped at 125 cycles; features are
+          3 operational settings + 21 C-MAPSS sensor channels.
+        </p>
+        <div class="pill-row" style="margin-top:10px">
+          <span class="pill purple">24 features</span>
+          <span class="pill purple">q10 / q90</span>
+          <span class="pill purple">125-cycle clip</span>
+          <span class="pill purple">NASA PHM score</span>
+        </div>
+      </article>
+
+      <article class="card tint-green">
+        <div class="num green">OP</div>
+        <h3>Delivery &amp; operations</h3>
+        <p>
+          Local/air-gapped deployment, one-command Windows launcher, FastAPI static hosting,
+          CSV export, print-ready console and no external service dependency.
+        </p>
+        <div class="pill-row" style="margin-top:10px">
+          <span class="pill green">start.bat</span>
+          <span class="pill green">uvicorn :8000</span>
+          <span class="pill green">Vite proxy /api</span>
+          <span class="pill green">CSV export</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="callout warn" style="margin-top:14px">
+      <span class="mark">!</span>
+      <div>
+        <strong>Not an LLM product:</strong> “Raksha-Mitra” is a deterministic IETM/SOP retrieval
+        engine over a curated fault knowledge base. It does not call OpenAI, Gemini or any cloud model.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Frontend · Backend · ML · Delivery</span>
+    </div>
+  </section>
+
+  <!-- 06 · ML MODEL -->
+  <section class="slide" id="model">
+    <div class="slide-number">06 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">05 · Machine-learning model</span>
+      <h2>Three gradient-boosted models, one calibrated RUL envelope.</h2>
+      <p class="lede">
+        The model predicts Remaining Useful Life in cycles, converts it to flight hours and reports
+        a 10th–90th percentile band so maintainers can plan for the pessimistic case, not just the average.
+      </p>
+    </div>
+
+    <div class="two-col">
+      <div class="steps">
+        <div class="step">
+          <span class="num">1</span>
+          <div>
+            <h3>Data generation</h3>
+            <p>Deterministic <b>C-MAPSS FD001-profile</b> run-to-failure harness: <b>120 engines</b>, seed 42, healthy plateau followed by Weibull/exponential wear. Each row has <b>3 settings + 21 sensors</b>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">2</span>
+          <div>
+            <h3>Target definition</h3>
+            <p>RUL is clipped at <b>125 cycles</b> (piecewise upper limit) so the model learns the degradation zone rather than an unbounded healthy plateau.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">3</span>
+          <div>
+            <h3>Engine-level split</h3>
+            <p><b>75 / 25 split by engine</b>, not by cycle. This gives <b>30 held-out engines</b> and <b>7,693 test cycles</b> with no cycle leakage.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">4</span>
+          <div>
+            <h3>Model family</h3>
+            <p><b>scikit-learn HistGradientBoostingRegressor</b>: point model (150 iterations, lr 0.08, depth 7) and quantile models q10/q90 (100 iterations, lr 0.08, depth 6).</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="num">5</span>
+          <div>
+            <h3>Inference output</h3>
+            <p>RUL cycles × <b>1.4 h/cycle</b> → flight hours; risk tiers <b>NOMINAL / ELEVATED / HIGH / AOG</b>; trajectory and SHAP-style sensor attribution.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="metric green"><div class="value">9.13</div><div class="label">Test MAE</div><div class="note">cycles</div></div>
+          <div class="metric blue"><div class="value">0.893</div><div class="label">R²</div><div class="note">explained variance</div></div>
+          <div class="metric"><div class="value">13.20</div><div class="label">RMSE</div><div class="note">cycles</div></div>
+          <div class="metric purple"><div class="value">91.4<small>%</small></div><div class="label">Band coverage</div><div class="note">q10–q90</div></div>
+        </div>
+        <div class="card">
+          <h3>Model artifacts</h3>
+          <p class="mono" style="font-size:10.5px; line-height:1.7">
+            rul_lgbm.joblib<br />
+            rul_q10.joblib<br />
+            rul_q90.joblib<br />
+            benchmark_metrics.json
+          </p>
+        </div>
+        <div class="callout good">
+          <span class="mark">✓</span>
+          <div>
+            <strong>Graceful fallback:</strong> if artifacts are absent, <code>model.py</code> uses a
+            calibrated wear-index surrogate (T50, P30, PS30, BPR) so the demo still returns a prediction.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:14px">
+      <span class="mark">XAI</span>
+      <div>
+        <strong>Explainability:</strong> the console shows attribution for T50 / <code>s4</code>,
+        P30 / <code>s7</code>, core vibration and bypass ratio / <code>s15</code> — implemented as a
+        deterministic, SHAP-style engineering contribution model, not a SHAP library call.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Model: scikit-learn HistGradientBoosting · 30 held-out engines</span>
+    </div>
+  </section>
+
+  <!-- 07 · PHYSICS & TWIN -->
+  <section class="slide" id="physics">
+    <div class="slide-number">07 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">06 · Physics engine &amp; digital twin</span>
+      <h2>Physics gives the limits. ML learns the wear.</h2>
+      <p class="lede">
+        The physics layer turns raw telemetry into interpretable engineering indicators, then the
+        digital twin places those indicators on the airframe so a maintainer can see where the problem is.
+      </p>
+    </div>
+
+    <div class="two-col">
+      <div class="grid-2">
+        <article class="card">
+          <h3>EGT margin</h3>
+          <p><code>EGT_margin = max(0, 880 − EGT)</code><br />A shrinking margin is the primary physical signal of turbine creep and thermal degradation.</p>
+        </article>
+        <article class="card">
+          <h3>HPC efficiency</h3>
+          <p><code>η = (p30/p24)^((γ−1)/γ) / (T30/T24)</code><br />γ = 1.4; drop is measured against a nominal 0.885 efficiency.</p>
+        </article>
+        <article class="card">
+          <h3>Vibration harmonics</h3>
+          <p>Fan and core RMS are tracked with 1X/2X rotor harmonics. Thresholds: 1.5 / 2.8 / 4.5 mm/s for fan; 2.0 / 3.5 / 5.5 mm/s for core.</p>
+        </article>
+        <article class="card">
+          <h3>Fatigue index</h3>
+          <p><code>D = Σ(ΔG^3.2 / 1.5e5)</code> for ΔG &gt; 1.5; simplified rainflow counting with Palmgren–Miner cumulative damage.</p>
+        </article>
+      </div>
+
+      <div>
+        <img class="twin-shot" src="/ppt/ui-twin.jpg" alt="Three.js 3D digital twin console showing the Su-30MKI airframe, subsystem inspector and live telemetry readouts" />
+        <div class="twin-caption">Live console: Three.js WebGL twin with exploded subsystems, heatmap mode, subsystem inspector and telemetry readouts.</div>
+        <div class="card" style="margin-top:10px">
+          <h3>Subsystem health index</h3>
+          <p>
+            Weighted overall health: <b>40% propulsion</b>, <b>25% hydraulics</b>,
+            <b>20% avionics</b>, <b>15% airframe</b>. Five groups are rendered:
+            port/starboard engines, hydraulics, avionics/radar and airframe structure.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout good" style="margin-top:14px">
+      <span class="mark">✓</span>
+      <div>
+        <strong>Hybrid rationale:</strong> physics provides fast, interpretable redlines and simulation;
+        the ML model learns non-linear wear patterns from run-to-failure histories. Neither is used alone.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>physics.py · DigitalTwin3D.tsx · /api/digital-twin</span>
+    </div>
+  </section>
+
+  <!-- 08 · MODULES & DATA -->
+  <section class="slide" id="modules">
+    <div class="slide-number">08 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">07 · Platform modules &amp; data layer</span>
+      <h2>Eight modules, one operating picture.</h2>
+      <p class="lede">
+        The console exposes seven working tabs plus a requisition modal. Every module reads from
+        the same fleet registry, so a prediction, a spare and a sortie decision stay consistent.
+      </p>
+    </div>
+
+    <div class="grid-4" style="gap:10px">
+      <article class="card">
+        <h3>01 · Fleet Command</h3>
+        <p>MC/FMC/PMC/AOG counts, base and status filters, critical AOG alerts.</p>
+        <span class="tag mono">/api/fleet</span>
+      </article>
+      <article class="card">
+        <h3>02 · 3D Digital Twin</h3>
+        <p>Exploded subsystems, thermal/stress heatmap, live readouts and component wear.</p>
+        <span class="tag mono">/api/digital-twin/{tail}</span>
+      </article>
+      <article class="card">
+        <h3>03 · Predictive AI</h3>
+        <p>Point RUL, q10/q90 band, degradation trajectory and sensor attribution.</p>
+        <span class="tag mono">/api/predict/{tail}</span>
+      </article>
+      <article class="card">
+        <h3>04 · Depot &amp; Spares</h3>
+        <p>IMMOLS-style catalog, e-MMS work orders and lead-time-vs-RUL deficit alerts.</p>
+        <span class="tag mono">/api/logistics</span>
+      </article>
+      <article class="card">
+        <h3>05 · Anti-Cannibalization</h3>
+        <p>Donor feasibility score, swap time vs depot replenishment, fleet-impact assessment.</p>
+        <span class="tag mono">/api/logistics/cannibalization</span>
+      </article>
+      <article class="card">
+        <h3>06 · Mission Dispatch</h3>
+        <p>QRA, CAP, deep strike and ferry profiles; eligibility gates and ranked allocation.</p>
+        <span class="tag mono">/api/dispatch/recommend</span>
+      </article>
+      <article class="card">
+        <h3>07 · Raksha-Mitra</h3>
+        <p>Four fault families with SOP steps, required tools and estimated turnaround.</p>
+        <span class="tag mono">/api/assistant/query</span>
+      </article>
+      <article class="card">
+        <h3>08 · Validation &amp; What-If</h3>
+        <p>C-MAPSS metrics, combat/dust/high-G stress simulation and fleet CSV export.</p>
+        <span class="tag mono">/api/benchmark · /api/whatif</span>
+      </article>
+    </div>
+
+    <div class="grid-3" style="margin-top:13px">
+      <div class="card tint-blue">
+        <h3>Fleet &amp; bases</h3>
+        <p><b>10 aircraft</b> across <b>4 types</b> — Su-30MKI, Tejas Mk1A, Rafale, MiG-29UPG — at <b>6 airbases</b>: Ambala, Halwara, Sulur, Tezpur, Bareilly and Pune.</p>
+      </div>
+      <div class="card tint-amber">
+        <h3>Depots &amp; spares</h3>
+        <p><b>3 BRDs</b> — 3 BRD Chandigarh, 11 BRD Ojhar/Nashik, 7 BRD Tughlakabad. <b>5 NSN-coded items</b> with 12–36 h lead times and live stock levels.</p>
+      </div>
+      <div class="card tint-green">
+        <h3>Knowledge &amp; missions</h3>
+        <p><b>4 IETM fault families</b> (EGT, vibration, hydraulic, 1553 bus) and <b>4 mission profiles</b> with explicit G, RUL, fatigue and health gates.</p>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:13px">
+      <span class="mark">!</span>
+      <div>
+        <strong>Integration stance:</strong> data contracts are modeled on IAF e-MMS/IMMOLS and BRD
+        workflows, but the current build uses simulated records. It is a working prototype, not a live depot connection.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>7 console tabs + requisition modal · shared fleet registry</span>
+    </div>
+  </section>
+
+  <!-- 09 · VALIDATION -->
+  <section class="slide" id="validation">
+    <div class="slide-number">09 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">08 · Validation</span>
+      <h2>Measured on held-out engines, not on the training set.</h2>
+      <p class="lede">
+        The benchmark script performs an engine-level split, evaluates the point and quantile models,
+        and writes the report consumed by the validation console.
+      </p>
+    </div>
+
+    <div class="metrics" style="grid-template-columns:repeat(5,minmax(0,1fr))">
+      <div class="metric green"><div class="value">9.13</div><div class="label">Test MAE</div><div class="note">cycles</div></div>
+      <div class="metric blue"><div class="value">13.20</div><div class="label">RMSE</div><div class="note">cycles</div></div>
+      <div class="metric"><div class="value">0.893</div><div class="label">R²</div><div class="note">explained variance</div></div>
+      <div class="metric purple"><div class="value">91.4<small>%</small></div><div class="label">q10–q90 coverage</div><div class="note">target 80%</div></div>
+      <div class="metric amber"><div class="value">22.7<small>k</small></div><div class="label">NASA PHM score</div><div class="note">22,692.15</div></div>
+    </div>
+
+    <div class="two-col" style="margin-top:18px">
+      <div>
+        <h3 style="margin-bottom:8px">MAE by remaining-life window</h3>
+        <div class="bar-row">
+          <span class="bar-label">0–25 cycles</span>
+          <div class="bar-track"><div class="bar-fill" style="width:24%"></div></div>
+          <span class="bar-value">3.86 <span>cycles</span></span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">25–50 cycles</span>
+          <div class="bar-track"><div class="bar-fill" style="width:64%"></div></div>
+          <span class="bar-value">10.19 <span>cycles</span></span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">50–75 cycles</span>
+          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
+          <span class="bar-value">15.99 <span>cycles</span></span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">75–125 cycles</span>
+          <div class="bar-track"><div class="bar-fill" style="width:99.8%"></div></div>
+          <span class="bar-value">15.96 <span>cycles</span></span>
+        </div>
+        <p class="tiny muted" style="margin-top:8px">
+          Values from <span class="mono">benchmark_metrics.json</span>; engine-level hold-out with
+          30 test engines and 7,693 test cycles. Lower is better.
+        </p>
+      </div>
+
+      <div class="stack">
+        <div class="card tint-green">
+          <h3>What the numbers mean</h3>
+          <p>
+            <b>3.86 cycles</b> MAE in the 0–25 window — the highest precision exactly where flight safety matters.
+            <b>91.4%</b> of true RUL values fall inside the q10–q90 band, above the 80% target.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Benchmark scope</h3>
+          <p>
+            The shipped build uses a deterministic <b>120-engine C-MAPSS-profile generator</b> so the
+            demo runs offline. It is not yet trained on recorded FD001 files or live squadron telemetry.
+            Metrics are reproducible with <code>python -m app.train</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:14px">
+      <span class="mark">!</span>
+      <div>
+        <strong>Claim boundary:</strong> these are benchmark results on a controlled run-to-failure
+        dataset, not a flight-qualified certification. Field calibration and recorded-data validation
+        are the next step.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>30 held-out engines · 7,693 test cycles · reproducible benchmark script</span>
+    </div>
+  </section>
+
+  <!-- 10 · PROTOTYPE -->
+  <section class="slide" id="prototype">
+    <div class="slide-number">10 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">09 · Working prototype</span>
+      <h2>The console is live, not a mock-up.</h2>
+      <p class="lede">
+        Captured from the running React console at 1440px wide, backed by the FastAPI service.
+        Each tab is interactive; the screenshots below are the actual rendered UI.
+      </p>
+    </div>
+
+    <div class="gallery">
+      <figure class="shot">
+        <img src="/ppt/ui-fleet.jpg" alt="Fleet Command tab showing mission capable metrics, AOG alerts and aircraft health cards" />
+        <figcaption class="cap"><b>Fleet Command</b><span>MCC / AOG</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/ppt/ui-twin.jpg" alt="3D Digital Twin tab showing a WebGL fighter jet and subsystem inspector" />
+        <figcaption class="cap"><b>3D Digital Twin</b><span>Three.js</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/ppt/ui-logistics.jpg" alt="Depot and Spares tab showing lead-time deficit alerts and IMMOLS inventory" />
+        <figcaption class="cap"><b>Depot &amp; Spares</b><span>IMMOLS</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/ppt/ui-dispatch.jpg" alt="Mission Dispatch tab showing QRA mission profiles and ranked aircraft allocation" />
+        <figcaption class="cap"><b>Mission Dispatch</b><span>QRA / CAP</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/ppt/ui-assistant.jpg" alt="Raksha-Mitra tab showing an IETM standard operating procedure for an EGT overheat" />
+        <figcaption class="cap"><b>Raksha-Mitra</b><span>IETM SOP</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="/ppt/ui-benchmarks.jpg" alt="Validation tab showing test MAE, R-squared, band coverage and early warning horizon" />
+        <figcaption class="cap"><b>Validation</b><span>C-MAPSS</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="callout" style="margin-top:14px">
+      <span class="mark">→</span>
+      <div>
+        <strong>Interaction path:</strong> select an airframe in Fleet Command → inspect its 3D twin
+        and RUL → pre-order the flagged spare → dispatch or reserve the airframe based on mission fit.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Live console captures · 1440px viewport</span>
+    </div>
+  </section>
+
+  <!-- 11 · DEPLOYMENT & ROADMAP -->
+  <section class="slide" id="roadmap">
+    <div class="slide-number">11 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">10 · Deployment, security &amp; roadmap</span>
+      <h2>Built to run inside the station, not in the cloud.</h2>
+      <p class="lede">
+        The current prototype runs entirely locally. The roadmap is about connecting it to real
+        maintenance systems — not replacing the model with a hosted service.
+      </p>
+    </div>
+
+    <div class="two-col">
+      <div class="stack">
+        <div class="card tint-green">
+          <h3>Deployment posture</h3>
+          <p>
+            Local/air-gapped execution; FastAPI serves the API and the built SPA from one process.
+            <code>start.bat</code> trains missing models, builds the UI if needed and launches Uvicorn.
+            No cloud ML, no external LLM, no paid API.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Security &amp; data notes</h3>
+          <p>
+            Demo data is in-memory and resets with the process. CORS is open for local development;
+            production requires restricted origins, authentication/RBAC, audit logging and a
+            database-backed store. These are deliberate next-step items, not hidden claims.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Verified in the build</h3>
+          <p>
+            <b>12 backend tests</b> cover fleet, dossier, telemetry, twin, quantile ordering,
+            logistics, work orders, cannibalization, dispatch, assistant, what-if and CSV export.
+            The frontend builds with Vite.
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline" style="grid-template-columns:1fr">
+        <div class="phase">
+          <div class="when">Phase 1 · 0–3 months</div>
+          <h3>Integrate</h3>
+          <p>e-MMS/IMMOLS sandbox, ground-test rig feed, real NASA FD001 file loader, field sensor calibration.</p>
+        </div>
+        <div class="phase">
+          <div class="when">Phase 2 · 3–6 months</div>
+          <h3>Field trial</h3>
+          <p>Selected Su-30MKI / Tejas squadron, maintainer feedback loop, threshold tuning, reliability tracking.</p>
+        </div>
+        <div class="phase">
+          <div class="when">Phase 3 · 6–12 months</div>
+          <h3>Depot rollout</h3>
+          <p>3 BRD / 11 BRD / 7 BRD deployment, RBAC and audit, AFNet hardening, full spares workflow.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" style="margin-top:14px">
+      <span class="mark">!</span>
+      <div>
+        <strong>Status:</strong> working prototype, not flight-certified. The ML, physics, logistics
+        and dispatch engines are functional; live sensor and depot integrations remain roadmap items.
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>VayuRakshak · AeroTwin-AI</span>
+      <span>Local-first · air-gapped · integration roadmap</span>
+    </div>
+  </section>
+
+  <!-- 12 · SUMMARY -->
+  <section class="slide" id="summary">
+    <div class="slide-number">12 / 12</div>
+    <div class="section-head">
+      <span class="eyebrow">11 · One-slide summary</span>
+      <h2>What was built, with what, and what it proves.</h2>
+      <p class="lede">
+        A presentation-ready summary you can read in 60 seconds — or lift directly into a closing slide.
+      </p>
+    </div>
+
+    <div class="summary-grid">
+      <article class="summary-card">
+        <h3>Built with</h3>
+        <ul>
+          <li><b>React 19 + TypeScript + Vite</b> single-page console</li>
+          <li><b>Tailwind CSS v4</b> for the Notion-style interface</li>
+          <li><b>Three.js</b> for the 3D digital twin</li>
+          <li><b>Recharts</b> for RUL and health charts</li>
+          <li><b>FastAPI + Uvicorn</b> for the REST decision engine</li>
+          <li><b>NumPy, pandas, scikit-learn, joblib</b> for data and models</li>
+        </ul>
+      </article>
+      <article class="summary-card">
+        <h3>Intelligence</h3>
+        <ul>
+          <li><b>HistGradientBoosting</b> point + q10/q90 RUL models</li>
+          <li><b>24 features</b> — 3 settings + 21 C-MAPSS sensors</li>
+          <li><b>Physics engine</b> — EGT margin, HPC efficiency, vibration, fatigue</li>
+          <li><b>SHAP-style XAI</b> for root-cause sensor attribution</li>
+          <li><b>Lead-time-vs-RUL</b> spares alerts and donor scoring</li>
+          <li><b>Mission-fit dispatch</b> across four operational profiles</li>
+        </ul>
+      </article>
+      <article class="summary-card">
+        <h3>Proof</h3>
+        <ul>
+          <li><b>9.13 cycles</b> test MAE on 30 held-out engines</li>
+          <li><b>13.20 cycles</b> RMSE · <b>0.893</b> R²</li>
+          <li><b>91.4%</b> q10–q90 band coverage</li>
+          <li><b>3.86 cycles</b> MAE in the 0–25 cycle window</li>
+          <li><b>7,693</b> test cycles · engine-level split</li>
+          <li><b>12</b> backend tests · working 7-tab console</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="closing">
+      <p>From reactive maintenance to predictive fleet availability — sovereign, explainable and air-gapped.</p>
+      <span>
+        Run: <b>start.bat</b> → http://127.0.0.1:8000 &nbsp;·&nbsp;
+        Dossier: <b>/solution.html</b> &nbsp;·&nbsp;
+        SIH 2026 · Problem Statement 26249 · Ministry of Defence (DSSC)
+      </span>
+    </div>
+
+    <div class="slide-footer">
+      <span>Project VayuRakshak · AeroTwin-AI</span>
+      <span>Technical solution dossier · 2026</span>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  document.getElementById("printBtn").addEventListener("click", function () {
+    window.print();
+  });
+
+  // Keep the toolbar link for the visible slide highlighted.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll(".toolbar-nav a"));
+    var slides = links.map(function (a) { return document.querySelector(a.getAttribute("href")); }).filter(Boolean);
+    if (!("IntersectionObserver" in window) || !slides.length) return;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        links.forEach(function (a) {
+          var active = a.getAttribute("href") === "#" + entry.target.id;
+          a.style.background = active ? "#ececea" : "";
+          a.style.color = active ? "#191919" : "";
+        });
+      });
+    }, { rootMargin: "-20% 0px -70% 0px", threshold: 0 });
+    slides.forEach(function (slide) { observer.observe(slide); });
+  })();
+</script>
+</body>
+</html>

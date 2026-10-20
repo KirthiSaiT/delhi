@@ -7,7 +7,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { Slider } from "@/components/ui/slider"
 import { TONE, aqiCat, fmtTime } from "@/lib/aqi"
 import { useT } from "@/lib/i18n"
-import type { Forecast, WhatIfParams } from "@/lib/types"
+import type { Forecast, WhatIfParams } from "@/lib/forecast"
 import { cn } from "@/lib/utils"
 
 const hr = (t: string) => {
@@ -24,7 +24,7 @@ export function AttributionCard({ d }: { d: Forecast }) {
     stubble: { label: t("Stubble plume"), color: "#d9730d" },
     feedback: { label: t("Feedback amplification"), color: "#e03e3e" },
   }
-  const data = d.times.map((tm, i) => ({ label: hr(tm), background: a.background[i], stubble: a.stubble[i], feedback: a.feedback[i] }))
+  const data = d.times.map((tm: string, i: number) => ({ label: hr(tm), background: a.background[i], stubble: a.stubble[i], feedback: a.feedback[i] }))
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -77,7 +77,7 @@ export function AdvisoryCard({ d, hour }: { d: Forecast; hour: number }) {
   const next24 = aqi.slice(0, 25)
   const best = next24.indexOf(Math.min(...next24.slice(1)))
   const worst = aqi.indexOf(Math.max(...aqi))
-  const badHours = aqi.slice(1).filter((v) => v > 300).length
+  const badHours = aqi.slice(1).filter((v: number) => v > 300).length
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -117,7 +117,7 @@ export function WhatIfCard({ params, setParams, run, reset, running }: {
       </CardHeader>
       <CardContent className="space-y-4">
         {SLIDERS.map((s) => (
-          <div key={s.key} className="space-y-2">
+          <div key={String(s.key)} className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium">{t(s.label)}</span><span className="tabular-nums text-muted-foreground">{s.fmt(params[s.key], t)}</span>
             </div>

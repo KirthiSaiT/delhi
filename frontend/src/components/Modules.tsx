@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { TONE, type Tone } from "@/lib/aqi"
 import { useT } from "@/lib/i18n"
-import type { Forecast } from "@/lib/types"
+import type { Forecast } from "@/lib/forecast"
 import { cn } from "@/lib/utils"
 
 const hr = (t: string) => {
@@ -87,7 +87,7 @@ export function OzoneCard({ d, hour }: { d: Forecast; hour: number }) {
     o3: { label: t("Ozone (µg/m³)"), color: "#d9730d" },
     no2: { label: t("NO₂ (µg/m³)"), color: "#534ab7" },
   }
-  const data = d.times.map((tm, i) => ({ label: hr(tm), o3: d.delhi.o3[i], no2: d.delhi.no2[i] }))
+  const data = d.times.map((tm: string, i: number) => ({ label: hr(tm), o3: d.delhi.o3[i], no2: d.delhi.no2[i] }))
   const peak = o.daily[0]
   return (
     <Card>
@@ -139,8 +139,8 @@ export function OzoneCard({ d, hour }: { d: Forecast; hour: number }) {
 export function DriversCard({ d, hour }: { d: Forecast; hour: number }) {
   const { t } = useT()
   const dr = d.drivers
-  const rows = dr.groups.map((g, i) => ({ name: t(g), v: dr.pct[hour][i] }))
-    .sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 6)
+  const rows = dr.groups.map((g: string, i: number) => ({ name: t(g), v: dr.pct[hour][i] }))
+    .sort((a: { name: string; v: number }, b: { name: string; v: number }) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 6)
   const config: ChartConfig = { v: { label: t("Effect on PM2.5 (%)"), color: "#e03e3e" } }
   return (
     <Card>
@@ -157,7 +157,7 @@ export function DriversCard({ d, hour }: { d: Forecast; hour: number }) {
             <ReferenceLine x={0} stroke="#9b9a97" />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Bar dataKey="v" radius={3}>
-              {rows.map((r) => <Cell key={r.name} fill={r.v >= 0 ? "#e03e3e" : "#0075de"} />)}
+              {rows.map((r: { name: string; v: number }) => <Cell key={r.name} fill={r.v >= 0 ? "#e03e3e" : "#0075de"} />)}
             </Bar>
           </BarChart>
         </ChartContainer>

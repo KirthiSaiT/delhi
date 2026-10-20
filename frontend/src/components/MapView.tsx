@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import * as maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
-import type { Forecast } from "@/lib/types"
+import type { Forecast } from "@/lib/forecast"
 import { CATS, aqiColor } from "@/lib/aqi"
 
 // worker + its shared chunk are copied unhashed into /public/maplibre (Vite hashing breaks the relative import)
@@ -94,7 +94,7 @@ export default function MapView({ data, hour, basemap, region, layers, selected,
   useEffect(() => {
     const m = map.current; if (!m || !ready) return
     ;(m.getSource("fires") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection",
-      features: data.plume.fires.map(([lo, la, frp]) => ({ type: "Feature", properties: { frp }, geometry: { type: "Point", coordinates: [lo, la] } })) } as any)
+      features: data.plume.fires.map(([lo, la, frp]: [number, number, number]) => ({ type: "Feature", properties: { frp }, geometry: { type: "Point", coordinates: [lo, la] } })) } as any)
   }, [data, ready])
 
   // per-hour: grid + plume

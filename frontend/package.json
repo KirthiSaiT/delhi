@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/ && tsc -b && vite build",
+    "build": "node -e \"const fs=require('fs');['maplibre-gl-worker.mjs','maplibre-gl-shared.mjs'].forEach(f=>fs.copyFileSync('node_modules/maplibre-gl/dist/'+f,'public/maplibre/'+f))\" && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },

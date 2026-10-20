@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { TONE } from "@/lib/aqi"
 import { useT } from "@/lib/i18n"
-import type { Forecast } from "@/lib/types"
+import type { Forecast } from "@/lib/forecast"
 import { cn } from "@/lib/utils"
 
 interface Answer { text: string; source: "llm" | "template"; model: string | null; note: string | null }

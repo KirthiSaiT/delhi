@@ -5,7 +5,83 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import type { Forecast } from "@/lib/types"
+// Forecast type for the AQI/weather forecast data shape
+interface StationData {
+  name: string
+  aqi: number[]
+  aqi_unc: number[]
+  pm25: number[]
+  pm25_unc: number[]
+  pm25_lo: number[]
+  pm25_hi: number[]
+  pm25_cams: number[]
+  pm10: number[]
+  no2: number[]
+  o3: number[]
+  [key: string]: string | number[]
+}
+
+interface DelhiData {
+  aqi: number[]
+  aqi_unc: number[]
+  pm25: number[]
+  pm25_unc: number[]
+  pm25_lo: number[]
+  pm25_hi: number[]
+  pm25_cams: number[]
+  pm10: number[]
+  no2: number[]
+  o3: number[]
+  pbl: number[]
+  pbl_nwp: number[]
+  t2m: number[]
+  t2m_nwp: number[]
+  inv: number[]
+  vent: number[]
+  stubble: number[]
+  [key: string]: number[]
+}
+
+interface Forecast {
+  times: string[]
+  delhi: DelhiData
+  delhi_wd: number[]
+  stations: StationData[]
+  dominant: string
+  scenario: string
+  has_cams: boolean
+  inversion: {
+    classes: number[]
+    names: string[]
+    hours_moderate_or_strong: number
+    max_c: number
+    max_hour: number
+    min_pbl_m: number
+  }
+  feedback: {
+    pm25_uplift_mean: number
+    pm25_uplift_max: number
+    pm25_uplift_hour: number
+    day_cooling_c: number
+    aod_peak: number
+    pbl_reduction_pct: number
+    iterations: number
+    residual_ugm3: number[]
+  }
+  plume: {
+    summary: {
+      n_fires: number
+      total_frp: number
+      arrival_h: number | null
+      peak_ugm3: number
+      peak_h: number | null
+    }
+  }
+  uncertainty: {
+    available: boolean
+    holdout_coverage?: { overall: number }
+  }
+}
 import { INV_COLORS, TONE, aqiCat, aqiColor, fmtTime } from "@/lib/aqi"
 import { useT } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
@@ -38,7 +114,7 @@ export function Stat({ label, value, sub }: { label: string; value: React.ReactN
 
 export function AqiCard({ d, hour, name, onPick }: { d: Forecast; hour: number; name: string | null; onPick: (h: number) => void }) {
   const { t } = useT()
-  const st = name ? d.stations.find((s) => s.name === name) : null
+  const st = name ? d.stations.find((s: StationData) => s.name === name) : null
   const g = (k: "aqi" | "aqi_unc" | "pm25" | "pm10" | "no2" | "o3") => (st ? (st as any)[k][hour] : d.delhi[k][hour])
   const aqi = Math.round(g("aqi")), unc = Math.round(g("aqi_unc")), cat = aqiCat(aqi)
   const series = st ? st.aqi : d.delhi.aqi
@@ -63,7 +139,7 @@ export function AqiCard({ d, hour, name, onPick }: { d: Forecast; hour: number; 
         </div>
         <div>
           <div className="mb-1 text-[11px] text-muted-foreground">{t("72-hour AQI outlook (tap a bar)")}</div>
-          <Strip colors={series.map((v) => aqiColor(v))} hour={hour} onPick={onPick} />
+          <Strip colors={series.map((v: number) => aqiColor(v))} hour={hour} onPick={onPick} />
         </div>
       </CardContent>
     </Card>
@@ -110,7 +186,7 @@ export function InversionCard({ d, hour, onPick }: { d: Forecast; hour: number; 
             <div className="text-xs text-muted-foreground">{t("Trapping factor")} <b className="text-foreground">×{trap.toFixed(1)}</b></div>
           </div>
         </div>
-        <Strip colors={d.inversion.classes.map((c) => INV_COLORS[c])} hour={hour} onPick={onPick} />
+        <Strip colors={d.inversion.classes.map((c: number) => INV_COLORS[c])} hour={hour} onPick={onPick} />
         <p className="text-xs text-muted-foreground">
           {d.inversion.hours_moderate_or_strong} h {t("of moderate/strong inversion in the next 72 h")} · {t("peak")} +{d.inversion.max_c}°C {t("at")} +{d.inversion.max_hour}h · {t("lowest PBL")} {d.inversion.min_pbl_m} m
         </p>
@@ -119,7 +195,7 @@ export function InversionCard({ d, hour, onPick }: { d: Forecast; hour: number; 
   )
 }
 
-const rows = (d: Forecast, a: string, b: string) => d.times.map((t, i) => ({ i, label: hr(t), a: d.delhi[a][i], b: d.delhi[b][i] }))
+const rows = (d: Forecast, a: string, b: string) => d.times.map((t: string, i: number) => ({ i, label: hr(t), a: d.delhi[a][i], b: d.delhi[b][i] }))
 
 export function FeedbackCard({ d, hour }: { d: Forecast; hour: number }) {
   const { t } = useT()
@@ -168,7 +244,7 @@ export function PlumeCard({ d }: { d: Forecast }) {
   const { t } = useT()
   const s = d.plume.summary
   const config: ChartConfig = { a: { label: t("Stubble PM2.5 at Delhi"), color: "#d9730d" } }
-  const data = d.times.map((tm, i) => ({ label: hr(tm), a: d.delhi.stubble[i] }))
+  const data = d.times.map((tm: string, i: number) => ({ label: hr(tm), a: d.delhi.stubble[i] }))
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -204,11 +280,11 @@ export function PlumeCard({ d }: { d: Forecast }) {
 
 export function ForecastChart({ d, hour, name }: { d: Forecast; hour: number; name: string | null }) {
   const { t } = useT()
-  const st = name ? d.stations.find((s) => s.name === name) : null
+  const st = name ? d.stations.find((s: StationData) => s.name === name) : null
   const src = (k: string): number[] => (st ? (st as any)[k] : d.delhi[k])
   const band = d.uncertainty.available
   const lo = src("pm25_lo"), hi = src("pm25_hi")
-  const data = d.times.map((tm, i) => ({
+  const data = d.times.map((tm: string, i: number) => ({
     label: hr(tm), coupled: src("pm25")[i], uncoupled: src("pm25_unc")[i], cams: src("pm25_cams")[i],
     lo: lo[i], band: Math.max(hi[i] - lo[i], 0) }))
   const cov = d.uncertainty.holdout_coverage?.overall

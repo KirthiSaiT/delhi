@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Bot, Crosshair, Gauge, Layers, Package, Plane, ShieldCheck, Terminal, Wrench } from "lucide-react"
+import { Bot, Crosshair, Gauge, Layers, Package, Plane, ShieldCheck, Wrench } from "lucide-react"
 
 interface Props {
   activeTab: string

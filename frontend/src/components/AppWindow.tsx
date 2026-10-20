@@ -1,12 +1,15 @@
+import { lazy, Suspense } from "react"
 import { Globe, Gauge, Plane, Layers, Package, Crosshair, Bot, Wrench } from "lucide-react"
 
-import { FleetCommand } from "./FleetCommand"
-import { DigitalTwin3D } from "./DigitalTwin3D"
-import { PredictiveAnalytics } from "./PredictiveAnalytics"
-import { LogisticsHub } from "./LogisticsHub"
-import { MissionDispatcher } from "./MissionDispatcher"
-import { RakshaMitraAssistant } from "./RakshaMitraAssistant"
-import { ValidationBenchmarks } from "./ValidationBenchmarks"
+// Each workspace tab pulls in heavy dependencies (three.js, recharts, maplibre),
+// so they are split into their own chunks and fetched on first visit.
+const FleetCommand = lazy(() => import("./FleetCommand").then((m) => ({ default: m.FleetCommand })))
+const DigitalTwin3D = lazy(() => import("./DigitalTwin3D").then((m) => ({ default: m.DigitalTwin3D })))
+const PredictiveAnalytics = lazy(() => import("./PredictiveAnalytics").then((m) => ({ default: m.PredictiveAnalytics })))
+const LogisticsHub = lazy(() => import("./LogisticsHub").then((m) => ({ default: m.LogisticsHub })))
+const MissionDispatcher = lazy(() => import("./MissionDispatcher").then((m) => ({ default: m.MissionDispatcher })))
+const RakshaMitraAssistant = lazy(() => import("./RakshaMitraAssistant").then((m) => ({ default: m.RakshaMitraAssistant })))
+const ValidationBenchmarks = lazy(() => import("./ValidationBenchmarks").then((m) => ({ default: m.ValidationBenchmarks })))
 
 import type {
   FleetSummary,
@@ -31,6 +34,15 @@ interface Props {
   digitalTwinData: DigitalTwinResponse | null
   predictionDossier: PredictionDossier | null
   onOpenOrderModal: (tail: string, partCode: string) => void
+}
+
+function WorkspaceFallback() {
+  return (
+    <div className="flex min-h-[640px] flex-col items-center justify-center gap-3 text-sm text-[#787774]">
+      <span className="size-2.5 rounded-full bg-[#0075de] animate-pulse" />
+      <span>Loading module…</span>
+    </div>
+  )
 }
 
 export function AppWindow({
@@ -119,53 +131,55 @@ export function AppWindow({
 
       {/* 3. Window Content Workspace */}
       <div className="p-6 sm:p-8 bg-[#fbfbfa] min-h-[700px]">
-        {activeTab === "fleet" && (
-          <FleetCommand
-            summary={fleetSummary}
-            aircraftList={aircraftList}
-            aogHazards={aogHazards}
-            onSelectAircraft={handleSelectAircraft}
-            onOpenOrderModal={onOpenOrderModal}
-          />
-        )}
+        <Suspense fallback={<WorkspaceFallback />}>
+          {activeTab === "fleet" && (
+            <FleetCommand
+              summary={fleetSummary}
+              aircraftList={aircraftList}
+              aogHazards={aogHazards}
+              onSelectAircraft={handleSelectAircraft}
+              onOpenOrderModal={onOpenOrderModal}
+            />
+          )}
 
-        {activeTab === "twin" && (
-          <DigitalTwin3D
-            data={digitalTwinData}
-            tailNumber={selectedTail}
-            onOpenOrderModal={onOpenOrderModal}
-          />
-        )}
+          {activeTab === "twin" && (
+            <DigitalTwin3D
+              data={digitalTwinData}
+              tailNumber={selectedTail}
+              onOpenOrderModal={onOpenOrderModal}
+            />
+          )}
 
-        {activeTab === "predictive" && (
-          <PredictiveAnalytics
-            dossier={predictionDossier}
-            aircraftList={aircraftList}
-            selectedTail={selectedTail}
-            onSelectTail={setSelectedTail}
-            onOpenOrderModal={onOpenOrderModal}
-          />
-        )}
+          {activeTab === "predictive" && (
+            <PredictiveAnalytics
+              dossier={predictionDossier}
+              aircraftList={aircraftList}
+              selectedTail={selectedTail}
+              onSelectTail={setSelectedTail}
+              onOpenOrderModal={onOpenOrderModal}
+            />
+          )}
 
-        {activeTab === "logistics" && (
-          <LogisticsHub
-            spares={spares}
-            workOrders={workOrders}
-            aogHazards={aogHazards}
-            aircraftList={aircraftList}
-            onOpenOrderModal={onOpenOrderModal}
-          />
-        )}
+          {activeTab === "logistics" && (
+            <LogisticsHub
+              spares={spares}
+              workOrders={workOrders}
+              aogHazards={aogHazards}
+              aircraftList={aircraftList}
+              onOpenOrderModal={onOpenOrderModal}
+            />
+          )}
 
-        {activeTab === "dispatch" && (
-          <MissionDispatcher onSelectAircraft={handleSelectAircraft} />
-        )}
+          {activeTab === "dispatch" && (
+            <MissionDispatcher onSelectAircraft={handleSelectAircraft} />
+          )}
 
-        {activeTab === "assistant" && <RakshaMitraAssistant />}
+          {activeTab === "assistant" && <RakshaMitraAssistant />}
 
-        {activeTab === "benchmarks" && (
-          <ValidationBenchmarks aircraftList={aircraftList} />
-        )}
+          {activeTab === "benchmarks" && (
+            <ValidationBenchmarks aircraftList={aircraftList} />
+          )}
+        </Suspense>
       </div>
     </div>
   )

@@ -73,29 +73,6 @@ function makeVerticalFin(side: 1|-1): THREE.Mesh {
   return mesh
 }
 
-function makeNacelle(): THREE.Group {
-  const g = new THREE.Group()
-  const torusMat = new THREE.MeshStandardMaterial({ color:0x1e293b, metalness:0.92, roughness:0.12 })
-  const intake = new THREE.Mesh(new THREE.TorusGeometry(0.43, 0.065, 16, 32), torusMat)
-  intake.rotation.x = Math.PI / 2
-  intake.position.z = 1.9
-  g.add(intake)
-  const pts: [number,number][] = [[0.43,1.9],[0.45,0.8],[0.46,0],[0.44,-1.2],[0.40,-2.0],[0.36,-2.6]]
-  const lp = pts.map(([r,y]) => new THREE.Vector2(r,y))
-  const body = new THREE.Mesh(new THREE.LatheGeometry(lp, 26).rotateX(Math.PI/2) as THREE.BufferGeometry,
-    new THREE.MeshStandardMaterial({ color:0x374151, metalness:0.90, roughness:0.18 }))
-  g.add(body)
-  const nozzle = new THREE.Mesh(
-    Object.assign(new THREE.CylinderGeometry(0.37, 0.30, 0.5, 22, 1, true), { rotateX: (a: number) => { const geo = new THREE.CylinderGeometry(0.37, 0.30, 0.5, 22, 1, true); geo.rotateX(a); return geo } }).rotateX
-      ? (() => { const geo = new THREE.CylinderGeometry(0.37, 0.30, 0.5, 22, 1, true); geo.rotateX(Math.PI/2); return geo })()
-      : new THREE.CylinderGeometry(0.37, 0.30, 0.5, 22),
-    new THREE.MeshStandardMaterial({ color:0x0f172a, metalness:0.95, roughness:0.08 })
-  )
-  nozzle.position.z = -2.75
-  g.add(nozzle)
-  return g
-}
-
 function buildNacelle(): THREE.Group {
   const g = new THREE.Group()
   // intake ring
@@ -238,8 +215,8 @@ export const DigitalTwin3D: React.FC<Props> = ({ data, tailNumber, onOpenOrderMo
     // Ground
     const grid = new THREE.GridHelper(30, 30, 0x1d4ed8, 0x1e3a5f)
     grid.position.y = -2.85
-    ;(grid.material as THREE.MeshBasicMaterial).transparent = true
-    ;(grid.material as THREE.MeshBasicMaterial).opacity = 0.32
+    grid.material.transparent = true
+    grid.material.opacity = 0.32
     scene.add(grid)
 
     const rGeo = new THREE.PlaneGeometry(30, 30)
